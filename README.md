@@ -11,7 +11,7 @@ No dependencies.
 ## Getting Started
 
 As a Client, use the WebSocketClientFactory
-e.g.
+e.g. 
 var factory = new WebSocketClientFactory();
 WebSocket webSocket = await factory.ConnectAsync(new Uri("wss://example.com"));
 
