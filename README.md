@@ -1,6 +1,12 @@
 ﻿# Ninja WebSockets
 
-A WebSocket library that allows you to make WebSocket connections as a client or to response to WebSocket requests as a server. This is a concrete implementation of the .Net Standard 2.0 System.Net.WebSockets.WebSocket abstract class. No dependencies. This means that you can safely pass around a general purpose WebSocket instance throughout your codebase without tieing yourself strongly to this library. This is the same WebSocket abstract class used by .net core 2.0. This library is allows for asynchronous Websocket communication for improved performance and scalability
+A concrete implementation of the .Net Standard 2.0 System.Net.WebSockets.WebSocket abstract class
+
+A WebSocket library that allows you to make WebSocket connections as a client or to respond to WebSocket requests as a server.
+You can safely pass around a general purpose WebSocket instance throughout your codebase without tying yourself strongly to this library. This is the same WebSocket abstract class used by .net core 2.0 and it allows for asynchronous Websocket communication for improved performance and scalability.
+
+No dependencies. 
+
 
 ## Getting Started
 

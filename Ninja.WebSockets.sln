@@ -11,6 +11,12 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Ninja.WebSockets.DemoServer
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Ninja.WebSockets.UnitTests", "Ninja.WebSockets.UnitTests\Ninja.WebSockets.UnitTests.csproj", "{E292CCA7-0C73-4520-8B86-A614637648A9}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{2FE82E17-7C02-4B44-B0B2-4ED31970D0DE}"
+	ProjectSection(SolutionItems) = preProject
+		LICENCE.md = LICENCE.md
+		README.md = README.md
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
