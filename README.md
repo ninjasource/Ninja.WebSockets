@@ -50,3 +50,10 @@ This project is licensed under the MIT License - see the LICENSE.md file for det
 
 * The official WebSocket spec:
   http://tools.ietf.org/html/rfc6455
+
+## Further Reading
+
+This library is based on all the amazing feedback I got after writing this article (thanks all):
+https://www.codeproject.com/articles/1063910/websocket-server-in-csharp
+
+The code in the article above was written before Microsoft made System.Net.WebSockets.WebSocket generally available with .NetStandard 2.0 but the concepts remain the same. Take a look if you are interested in the inner workings of the websocket protocol.
