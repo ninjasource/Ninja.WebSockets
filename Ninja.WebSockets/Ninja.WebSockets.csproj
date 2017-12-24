@@ -6,9 +6,9 @@
     <Authors>David Haig</Authors>
     <Company>David Haig</Company>
     <Copyright>David Haig</Copyright>
-    <PackageIconUrl>https://github.com/ninjasource/Ninja.WebSockets/icon.png</PackageIconUrl>
+    <PackageIconUrl>https://raw.githubusercontent.com/ninjasource/Ninja.WebSockets/master/icon.png</PackageIconUrl>
     <RepositoryUrl>https://github.com/ninjasource/Ninja.WebSockets</RepositoryUrl>
-    <PackageLicenseUrl>https://github.com/ninjasource/Ninja.WebSockets/LICENCE.md</PackageLicenseUrl>
+    <PackageLicenseUrl>https://raw.githubusercontent.com/ninjasource/Ninja.WebSockets/master/LICENCE.md</PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/ninjasource/Ninja.WebSockets</PackageProjectUrl>
     <Description>A concrete implementation of the .Net Standard 2.0 System.Net.WebSockets.WebSocket abstract class
 
