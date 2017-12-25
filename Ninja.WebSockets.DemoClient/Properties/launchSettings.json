@@ -1,8 +1,7 @@
 {
   "profiles": {
     "WebSockets.DemoClient": {
-      "commandName": "Project",
-      "commandLineArgs": "ws://localhost:27416/echo 5 1000 5000 40000"
+      "commandName": "Project"
     }
   }
 }

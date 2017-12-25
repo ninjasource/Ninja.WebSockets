@@ -13,27 +13,10 @@ namespace WebSockets.DemoClient.Simple
         public async Task Run()
         {
             var factory = new WebSocketClientFactory();
-            using (WebSocket webSocket = await factory.ConnectAsync(new Uri("ws://localhost:17823")))
+            using (WebSocket webSocket = await factory.ConnectAsync(new Uri("ws://localhost:27416/chat")))
             {
-                var readTask = new Task(async () =>
-                {
-                    var readBuffer = new ArraySegment<byte>(new byte[1024]);
-                    while (true)
-                    {
-                        WebSocketReceiveResult readResult = await webSocket.ReceiveAsync(readBuffer, CancellationToken.None);
-                        switch (readResult.MessageType)
-                        {
-                            case WebSocketMessageType.Close:
-                                return;
-                            case WebSocketMessageType.Text:
-                            case WebSocketMessageType.Binary:
-                                string value = Encoding.UTF8.GetString(readBuffer.Array, 0, readResult.Count);
-                                Console.WriteLine(value);
-                                break;
-                        }
-                    }
-                });
-                
+                var readTask = Receive(webSocket);
+
                 for (int i=0; i<10; i++)
                 {
                     var writeBuffer = new ArraySegment<byte>(Encoding.UTF8.GetBytes($"Test{i}"));
@@ -43,6 +26,25 @@ namespace WebSockets.DemoClient.Simple
                 await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, null, CancellationToken.None);
                 await readTask;
             }           
+        }
+
+        private async Task Receive(WebSocket webSocket)
+        {
+            var readBuffer = new ArraySegment<byte>(new byte[1024]);
+            while (true)
+            {
+                WebSocketReceiveResult readResult = await webSocket.ReceiveAsync(readBuffer, CancellationToken.None);
+                switch (readResult.MessageType)
+                {
+                    case WebSocketMessageType.Close:
+                        return;
+                    case WebSocketMessageType.Text:
+                    case WebSocketMessageType.Binary:
+                        string value = Encoding.UTF8.GetString(readBuffer.Array, 0, readResult.Count);
+                        Console.WriteLine(value);
+                        break;
+                }
+            }
         }
     }
 }

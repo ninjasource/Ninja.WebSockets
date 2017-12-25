@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Threading.Tasks;
 using WebSockets.DemoClient.Complex;
+using WebSockets.DemoClient.Simple;
 
 namespace WebSockets.DemoClient
 {
@@ -13,8 +14,9 @@ namespace WebSockets.DemoClient
             {
                 RunSimpleTest().Wait();
             }
-            if (args.Length == 5)
+            else if (args.Length == 5)
             {
+                // ws://localhost:27416/echo 5 1000 5000 40000
                 RunComplexTest(args).Wait();
             }
             else
@@ -44,7 +46,8 @@ namespace WebSockets.DemoClient
 
         private static async Task RunSimpleTest()
         {
-
+            SimpleClient client = new SimpleClient();
+            await client.Run();
         }
     }
 }
