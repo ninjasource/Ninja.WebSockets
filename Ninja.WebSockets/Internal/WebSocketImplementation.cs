@@ -219,7 +219,7 @@ namespace Ninja.WebSockets.Internal
                     {
                         DeflateStream deflateStream = new DeflateStream(temp, CompressionMode.Compress);
                         deflateStream.Write(buffer.Array, buffer.Offset, buffer.Count);
-                        deflateStream.Flush();
+                        await deflateStream.FlushAsync();
                         var compressedBuffer = new ArraySegment<byte>(temp.ToArray());
                         WebSocketFrameWriter.Write(opCode, compressedBuffer, stream, endOfMessage, _isClient);
                         Events.Log.SendingFrame(_guid, opCode, endOfMessage, compressedBuffer.Count, true);

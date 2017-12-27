@@ -15,32 +15,33 @@ namespace WebSockets.DemoClient.Simple
             var factory = new WebSocketClientFactory();
             using (WebSocket webSocket = await factory.ConnectAsync(new Uri("ws://localhost:27416/chat")))
             {
-                var readTask = Receive(webSocket);
-
-                for (int i=0; i<10; i++)
-                {
-                    var writeBuffer = new ArraySegment<byte>(Encoding.UTF8.GetBytes($"Test{i}"));
-                    await webSocket.SendAsync(writeBuffer, WebSocketMessageType.Text, true, CancellationToken.None);
-                }
-
+                Task readTask = Receive(webSocket);
+                await Send(webSocket);
                 await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, null, CancellationToken.None);
                 await readTask;
             }           
         }
 
+        private async Task Send(WebSocket webSocket)
+        {
+            var array = Encoding.UTF8.GetBytes("Hello World");
+            var buffer = new ArraySegment<byte>(array);
+            await webSocket.SendAsync(buffer, WebSocketMessageType.Text, true, CancellationToken.None);
+        }
+
         private async Task Receive(WebSocket webSocket)
         {
-            var readBuffer = new ArraySegment<byte>(new byte[1024]);
+            var buffer = new ArraySegment<byte>(new byte[1024]);
             while (true)
             {
-                WebSocketReceiveResult readResult = await webSocket.ReceiveAsync(readBuffer, CancellationToken.None);
-                switch (readResult.MessageType)
+                WebSocketReceiveResult result = await webSocket.ReceiveAsync(buffer, CancellationToken.None);
+                switch (result.MessageType)
                 {
                     case WebSocketMessageType.Close:
                         return;
                     case WebSocketMessageType.Text:
                     case WebSocketMessageType.Binary:
-                        string value = Encoding.UTF8.GetString(readBuffer.Array, 0, readResult.Count);
+                        string value = Encoding.UTF8.GetString(buffer.Array, 0, result.Count);
                         Console.WriteLine(value);
                         break;
                 }

@@ -30,6 +30,61 @@ if (context.IsWebSocketRequest)
     WebSocket webSocket = await factory.AcceptWebSocketAsync(context);
 }
 ```
+## Using the WebSocket class
+
+Client and Server send and receive data the same way.
+
+Receiving Data:
+```csharp
+private async Task Receive(WebSocket webSocket)
+{
+    var buffer = new ArraySegment<byte>(new byte[1024]);
+    while (true)
+    {
+        WebSocketReceiveResult result = await webSocket.ReceiveAsync(buffer, CancellationToken.None);
+        switch (result.MessageType)
+        {
+            case WebSocketMessageType.Close:
+                return;
+            case WebSocketMessageType.Text:
+            case WebSocketMessageType.Binary:
+                string value = Encoding.UTF8.GetString(buffer.Array, 0, result.Count);
+                Console.WriteLine(value);
+                break;
+        }
+    }
+}
+```
+
+Sending Data:
+```csharp
+private async Task Send(WebSocket webSocket)
+{
+    var array = Encoding.UTF8.GetBytes("Hello World");
+    var buffer = new ArraySegment<byte>(array);
+    await webSocket.SendAsync(buffer, WebSocketMessageType.Text, true, CancellationToken.None);
+} 
+```
+
+Simple client Request / Response:
+The best approach to comminicating using a web socket is to send and receive data on different worker threads as shown below. 
+```csharp
+public async Task Run()
+{
+    var factory = new WebSocketClientFactory();
+	var uri = new Uri("ws://localhost:27416/chat");
+    using (WebSocket webSocket = await factory.ConnectAsync(uri))
+    {
+        Task readTask = Receive(webSocket);
+        await Send(webSocket);
+        await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, null, CancellationToken.None);
+        await readTask;
+    }           
+}
+```
+## WebSocket Extensions
+
+Websocket extensions like compression (per message deflate) is currently work in progress.
 
 ## Running the tests
 
