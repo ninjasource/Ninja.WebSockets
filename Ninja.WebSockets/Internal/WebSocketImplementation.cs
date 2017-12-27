@@ -215,11 +215,14 @@ namespace Ninja.WebSockets.Internal
 
                 if (_usePerMessageDeflate)
                 {
+                    // NOTE: Compression is currently work in progress and should NOT be used in this library.
+                    // The code below is very inefficient for small messages. Ideally we would like to have some sort of moving window
+                    // of data to get the best compression. And we don't want to create new buffers which is bad for GC.
                     using (MemoryStream temp = new MemoryStream())
                     {
                         DeflateStream deflateStream = new DeflateStream(temp, CompressionMode.Compress);
                         deflateStream.Write(buffer.Array, buffer.Offset, buffer.Count);
-                        await deflateStream.FlushAsync();
+                        deflateStream.Flush();
                         var compressedBuffer = new ArraySegment<byte>(temp.ToArray());
                         WebSocketFrameWriter.Write(opCode, compressedBuffer, stream, endOfMessage, _isClient);
                         Events.Log.SendingFrame(_guid, opCode, endOfMessage, compressedBuffer.Count, true);
