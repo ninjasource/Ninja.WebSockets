@@ -13,12 +13,20 @@ namespace WebSockets.DemoClient.Simple
         public async Task Run()
         {
             var factory = new WebSocketClientFactory();
-            using (WebSocket webSocket = await factory.ConnectAsync(new Uri("ws://localhost:27416/chat")))
+            var uri = new Uri("ws://localhost:27416/chat");
+            using (WebSocket webSocket = await factory.ConnectAsync(uri))
             {
+                // receive loop
                 Task readTask = Receive(webSocket);
+
+                // send a message
                 await Send(webSocket);
+
+                // initiate the close handshake
                 await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, null, CancellationToken.None);
-                await readTask;
+
+                // wait for server to respond with a close frame
+                await readTask; 
             }           
         }
 
@@ -35,6 +43,7 @@ namespace WebSockets.DemoClient.Simple
             while (true)
             {
                 WebSocketReceiveResult result = await webSocket.ReceiveAsync(buffer, CancellationToken.None);
+                
                 switch (result.MessageType)
                 {
                     case WebSocketMessageType.Close:

@@ -35,6 +35,8 @@ if (context.IsWebSocketRequest)
 Client and Server send and receive data the same way.
 
 Receiving Data:
+
+Receive data in an infinite loop until we receive a close frame from the server
 ```csharp
 private async Task Receive(WebSocket webSocket)
 {
@@ -67,21 +69,30 @@ private async Task Send(WebSocket webSocket)
 ```
 
 Simple client Request / Response:
-The best approach to comminicating using a web socket is to send and receive data on different worker threads as shown below. 
+The best approach to communicating using a web socket is to send and receive data on different worker threads as shown below. 
+
 ```csharp
 public async Task Run()
 {
     var factory = new WebSocketClientFactory();
-	var uri = new Uri("ws://localhost:27416/chat");
+    var uri = new Uri("ws://localhost:27416/chat");
     using (WebSocket webSocket = await factory.ConnectAsync(uri))
     {
+        // receive loop
         Task readTask = Receive(webSocket);
+
+        // send a message
         await Send(webSocket);
+
+        // initiate the close handshake
         await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, null, CancellationToken.None);
-        await readTask;
+
+        // wait for server to respond with a close frame
+        await readTask; 
     }           
 }
 ```
+
 ## WebSocket Extensions
 
 Websocket extensions like compression (per message deflate) is currently work in progress.
