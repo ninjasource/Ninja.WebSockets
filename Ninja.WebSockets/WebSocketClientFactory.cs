@@ -67,9 +67,9 @@ namespace Ninja.WebSockets
         /// <param name="uri">The WebSocket uri to connect to (e.g. ws://example.com or wss://example.com for SSL)</param>
         /// <param name="token">The optional cancellation token</param>
         /// <returns>A connected web socket instance</returns>
-        public async Task<WebSocket> ConnectAsync(Uri uri, CancellationToken token = default(CancellationToken))
+        public Task<WebSocket> ConnectAsync(Uri uri, CancellationToken token = default(CancellationToken))
         {
-            return await ConnectAsync(uri, new WebSocketClientOptions(), token);
+            return ConnectAsync(uri, new WebSocketClientOptions(), token);
         }
 
         /// <summary>
@@ -92,17 +92,17 @@ namespace Ninja.WebSockets
             if (IPAddress.TryParse(host, out ipAddress))
             {
                 Events.Log.ClientConnectingToIpAddress(guid, ipAddress.ToString(), port);
-                await tcpClient.ConnectAsync(ipAddress, port);
+                await tcpClient.ConnectAsync(ipAddress, port).ConfigureAwait(false);
             }
             else
             {
                 Events.Log.ClientConnectingToHost(guid, host, port);
-                await tcpClient.ConnectAsync(host, port);
+                await tcpClient.ConnectAsync(host, port).ConfigureAwait(false);
             }
 
             token.ThrowIfCancellationRequested();
             Stream stream = GetStream(guid, tcpClient, useSsl, host);
-            return await PerformHandshake(guid, uri, stream, options, token);            
+            return await PerformHandshake(guid, uri, stream, options, token).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -117,10 +117,10 @@ namespace Ninja.WebSockets
         /// <param name="options">The WebSocket client options</param>
         /// <param name="token">The optional cancellation token</param>
         /// <returns></returns>
-        public async Task<WebSocket> ConnectAsync(Stream responseStream, string secWebSocketKey, WebSocketClientOptions options, CancellationToken token = default(CancellationToken))
+        public Task<WebSocket> ConnectAsync(Stream responseStream, string secWebSocketKey, WebSocketClientOptions options, CancellationToken token = default(CancellationToken))
         {
             Guid guid = Guid.NewGuid();
-            return await ConnectAsync(guid, responseStream, secWebSocketKey, options.KeepAliveInterval, options.SecWebSocketExtensions, options.IncludeExceptionInCloseResponse, token);
+            return ConnectAsync(guid, responseStream, secWebSocketKey, options.KeepAliveInterval, options.SecWebSocketExtensions, options.IncludeExceptionInCloseResponse, token);
         }
 
         private async Task<WebSocket> ConnectAsync(Guid guid, Stream responseStream, string secWebSocketKey, TimeSpan keepAliveInterval, string secWebSocketExtensions, bool includeExceptionInCloseResponse, CancellationToken token)
@@ -130,7 +130,7 @@ namespace Ninja.WebSockets
 
             try
             {
-                response = await HttpHelper.ReadHttpHeaderAsync(responseStream, token);
+                response = await HttpHelper.ReadHttpHeaderAsync(responseStream, token).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -158,10 +158,8 @@ namespace Ninja.WebSockets
                 Events.Log.HandshakeFailure(guid, warning);
                 throw new WebSocketHandshakeFailedException(warning);
             }
-            else
-            {
-                Events.Log.ClientHandshakeSuccess(guid);
-            }
+
+            Events.Log.ClientHandshakeSuccess(guid);
         }
 
         private void ThrowIfInvalidResponseCode(string responseHeader)
@@ -203,11 +201,9 @@ namespace Ninja.WebSockets
                 Events.Log.ConnectionSecured(guid);
                 return sslStream;
             }
-            else
-            {
-                Events.Log.ConnectionNotSecure(guid);
-                return stream;
-            }
+
+            Events.Log.ConnectionNotSecure(guid);
+            return stream;
         }
 
         /// <summary>
@@ -233,16 +229,14 @@ namespace Ninja.WebSockets
             {
                 return string.Empty;
             }
-            else
-            {
-                StringBuilder builder = new StringBuilder();
-                foreach(KeyValuePair<string,string> pair in additionalHeaders)
-                {
-                    builder.Append($"{pair.Key}: {pair.Value}\r\n");
-                }
 
-                return builder.ToString();
+            StringBuilder builder = new StringBuilder();
+            foreach(KeyValuePair<string,string> pair in additionalHeaders)
+            {
+                builder.Append($"{pair.Key}: {pair.Value}\r\n");
             }
+
+            return builder.ToString();
         }
 
         private async Task<WebSocket> PerformHandshake(Guid guid, Uri uri, Stream stream, WebSocketClientOptions options, CancellationToken token)
@@ -264,7 +258,7 @@ namespace Ninja.WebSockets
             byte[] httpRequest = Encoding.UTF8.GetBytes(handshakeHttpRequest);
             stream.Write(httpRequest, 0, httpRequest.Length);
             Events.Log.HandshakeSent(guid, handshakeHttpRequest);
-            return await ConnectAsync(stream, secWebSocketKey, options, token);
+            return await ConnectAsync(stream, secWebSocketKey, options, token).ConfigureAwait(false);
         }
     }
 }

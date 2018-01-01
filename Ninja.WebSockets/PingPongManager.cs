@@ -84,9 +84,9 @@ namespace Ninja.WebSockets
         /// </summary>
         /// <param name="payload">The payload (must be 125 bytes of less)</param>
         /// <param name="cancellation">The cancellation token</param>
-        public async Task SendPing(ArraySegment<byte> payload, CancellationToken cancellation)
+        public Task SendPing(ArraySegment<byte> payload, CancellationToken cancellation)
         {
-            await _webSocket.SendPingAsync(payload, cancellation);
+            return _webSocket.SendPingAsync(payload, cancellation);
         }
 
         protected virtual void OnPong(PongEventArgs e)
@@ -102,7 +102,7 @@ namespace Ninja.WebSockets
             {
                 while (!_cancellationToken.IsCancellationRequested)
                 {
-                    await Task.Delay(_keepAliveInterval, _cancellationToken);
+                    await Task.Delay(_keepAliveInterval, _cancellationToken).ConfigureAwait(false);
 
                     if (_webSocket.State != WebSocketState.Open)
                     {
@@ -112,7 +112,10 @@ namespace Ninja.WebSockets
                     if (_pingSentTicks != 0)
                     {
                         Events.Log.KeepAliveIntervalExpired(_guid, (int)_keepAliveInterval.TotalSeconds);
-                        await _webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, $"No Pong message received in response to a Ping after KeepAliveInterval {_keepAliveInterval}", _cancellationToken);
+                        await _webSocket.CloseAsync(
+                            WebSocketCloseStatus.NormalClosure, 
+                            $"No Pong message received in response to a Ping after KeepAliveInterval {_keepAliveInterval}", _cancellationToken)
+                            .ConfigureAwait(false);
                         break;
                     }
 
@@ -120,7 +123,7 @@ namespace Ninja.WebSockets
                     {
                         _pingSentTicks = _stopwatch.Elapsed.Ticks;
                         ArraySegment<byte> buffer = new ArraySegment<byte>(BitConverter.GetBytes(_pingSentTicks));
-                        await SendPing(buffer, _cancellationToken);
+                        await SendPing(buffer, _cancellationToken).ConfigureAwait(false);
                     }
                 }
             }

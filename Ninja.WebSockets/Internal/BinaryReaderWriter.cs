@@ -47,7 +47,8 @@ namespace Ninja.WebSockets.Internal
             int offset = 0;
             do
             {
-                int bytesRead = await stream.ReadAsync(buffer.Array, buffer.Offset + offset, length - offset, cancellationToken);
+                int bytesRead = await stream.ReadAsync(buffer.Array, buffer.Offset + offset, length - offset, cancellationToken)
+                    .ConfigureAwait(false);
                 if (bytesRead == 0)
                 {
                     throw new EndOfStreamException(string.Format("Unexpected end of stream encountered whilst attempting to read {0:#,##0} bytes", length));
@@ -55,13 +56,11 @@ namespace Ninja.WebSockets.Internal
 
                 offset += bytesRead;
             } while (offset < length);
-
-            return;
         }
 
         public static async Task<ushort> ReadUShortExactly(Stream stream, bool isLittleEndian, ArraySegment<byte> buffer, CancellationToken cancellationToken)
         {
-            await ReadExactly(2, stream, buffer, cancellationToken);
+            await ReadExactly(2, stream, buffer, cancellationToken).ConfigureAwait(false);
 
             if (!isLittleEndian)
             {
@@ -73,7 +72,7 @@ namespace Ninja.WebSockets.Internal
 
         public static async Task<ulong> ReadULongExactly(Stream stream, bool isLittleEndian, ArraySegment<byte> buffer, CancellationToken cancellationToken)
         {
-            await ReadExactly(8, stream, buffer, cancellationToken);
+            await ReadExactly(8, stream, buffer, cancellationToken).ConfigureAwait(false);
 
             if (!isLittleEndian)
             {
@@ -85,7 +84,7 @@ namespace Ninja.WebSockets.Internal
 
         public static async Task<long> ReadLongExactly(Stream stream, bool isLittleEndian, ArraySegment<byte> buffer, CancellationToken cancellationToken)
         {
-            await ReadExactly(8, stream, buffer, cancellationToken);
+            await ReadExactly(8, stream, buffer, cancellationToken).ConfigureAwait(false);
 
             if (!isLittleEndian)
             {

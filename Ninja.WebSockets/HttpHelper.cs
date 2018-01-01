@@ -87,7 +87,7 @@ namespace Ninja.WebSockets
                     throw new EntityTooLargeException("Http header message too large to fit in buffer (16KB)");
                 }
 
-                bytesRead = await stream.ReadAsync(buffer, offset, length - offset, token);
+                bytesRead = await stream.ReadAsync(buffer, offset, length - offset, token).ConfigureAwait(false);
                 offset += bytesRead;
                 string header = Encoding.UTF8.GetString(buffer, 0, offset);
 
@@ -167,11 +167,11 @@ namespace Ninja.WebSockets
         /// <param name="response">The response (without the new line characters)</param>
         /// <param name="stream">The stream to write to</param>
         /// <param name="token">The cancellation token</param>
-        public static async Task WriteHttpHeaderAsync(string response, Stream stream, CancellationToken token)
+        public static Task WriteHttpHeaderAsync(string response, Stream stream, CancellationToken token)
         {
             response = response.Trim() + "\r\n\r\n";
             Byte[] bytes = Encoding.UTF8.GetBytes(response);
-            await stream.WriteAsync(bytes, 0, bytes.Length, token);
+            return stream.WriteAsync(bytes, 0, bytes.Length, token);
         }
     }
 }
