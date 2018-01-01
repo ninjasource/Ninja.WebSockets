@@ -4,15 +4,15 @@ namespace Ninja.WebSockets.Internal
 {
     internal class WebSocketFrame
     {
-        public bool IsFinBitSet { get; private set; }
+        public bool IsFinBitSet { get; }
 
-        public WebSocketOpCode OpCode { get; private set; }
+        public WebSocketOpCode OpCode { get; }
 
-        public int Count { get; private set; }
+        public int Count { get; }
 
-        public WebSocketCloseStatus? CloseStatus { get; private set; }
+        public WebSocketCloseStatus? CloseStatus { get; }
 
-        public string CloseStatusDescription { get; private set; }
+        public string CloseStatusDescription { get; }
 
         public WebSocketFrame(bool isFinBitSet, WebSocketOpCode webSocketOpCode, int count)
         {
@@ -26,6 +26,5 @@ namespace Ninja.WebSockets.Internal
             CloseStatus = closeStatus;
             CloseStatusDescription = closeStatusDescription;
         }
-
     }
 }

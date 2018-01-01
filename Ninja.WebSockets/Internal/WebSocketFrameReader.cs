@@ -47,7 +47,7 @@ namespace Ninja.WebSockets.Internal
             // allocate a small buffer to read small chunks of data from the stream
             var smallBuffer = new ArraySegment<byte>(new byte[8]);
 
-            await BinaryReaderWriter.ReadExactly(2, fromStream, smallBuffer, cancellationToken);
+            await BinaryReaderWriter.ReadExactly(2, fromStream, smallBuffer, cancellationToken).ConfigureAwait(false);
             byte byte1 = smallBuffer.Array[0];
             byte byte2 = smallBuffer.Array[1];
 
@@ -60,32 +60,30 @@ namespace Ninja.WebSockets.Internal
             // read and process second byte
             byte maskFlag = 0x80;
             bool isMaskBitSet = (byte2 & maskFlag) == maskFlag;
-            uint len = await ReadLength(byte2, smallBuffer, fromStream, cancellationToken);
+            uint len = await ReadLength(byte2, smallBuffer, fromStream, cancellationToken).ConfigureAwait(false);
             int count = (int)len;
 
             // use the masking key to decode the data if needed
             if (isMaskBitSet)
             {
                 ArraySegment<byte> maskKey = new ArraySegment<byte>(smallBuffer.Array, 0, WebSocketFrameCommon.MaskKeyLength);
-                await BinaryReaderWriter.ReadExactly(maskKey.Count, fromStream, maskKey, cancellationToken);
-                await BinaryReaderWriter.ReadExactly(count, fromStream, intoBuffer, cancellationToken);
+                await BinaryReaderWriter.ReadExactly(maskKey.Count, fromStream, maskKey, cancellationToken).ConfigureAwait(false);
+                await BinaryReaderWriter.ReadExactly(count, fromStream, intoBuffer, cancellationToken).ConfigureAwait(false);
                 ArraySegment<byte> payloadToMask = new ArraySegment<byte>(intoBuffer.Array, intoBuffer.Offset, count);
                 WebSocketFrameCommon.ToggleMask(maskKey, payloadToMask);
             }
             else
             {
-                await BinaryReaderWriter.ReadExactly(count, fromStream, intoBuffer, cancellationToken);
+                await BinaryReaderWriter.ReadExactly(count, fromStream, intoBuffer, cancellationToken).ConfigureAwait(false);
             }
 
             if (opCode == WebSocketOpCode.ConnectionClose)
             {
                 return DecodeCloseFrame(isFinBitSet, opCode, count, intoBuffer);
             }
-            else
-            {
-                // note that by this point the payload will be populated
-                return new WebSocketFrame(isFinBitSet, opCode, count);
-            }
+
+            // note that by this point the payload will be populated
+            return new WebSocketFrame(isFinBitSet, opCode, count);
         }
 
         /// <summary>
@@ -142,15 +140,18 @@ namespace Ninja.WebSockets.Internal
             // read a short length or a long length depending on the value of len
             if (len == 126)
             {
-                len = await BinaryReaderWriter.ReadUShortExactly(fromStream, false, smallBuffer, cancellationToken);
+                len = await BinaryReaderWriter.ReadUShortExactly(fromStream, false, smallBuffer, cancellationToken)
+                    .ConfigureAwait(false);
             }
             else if (len == 127)
             {
-                len = (uint) await BinaryReaderWriter.ReadULongExactly(fromStream, false, smallBuffer, cancellationToken);
-                const uint maxLen = 2147483648; // 2GB - not part of the spec but just a precaution. Send large volumes of data in smaller frames.
+                len = (uint) await BinaryReaderWriter.ReadULongExactly(fromStream, false, smallBuffer, cancellationToken)
+                    .ConfigureAwait(false);
+                
+                const uint MaxLen = 2147483648; // 2GB - not part of the spec but just a precaution. Send large volumes of data in smaller frames.
 
                 // protect ourselves against bad data
-                if (len > maxLen || len < 0)
+                if (len > MaxLen || len < 0)
                 {
                     throw new ArgumentOutOfRangeException($"Payload length out of range. Min 0 max 2GB. Actual {len:#,##0} bytes.");
                 }

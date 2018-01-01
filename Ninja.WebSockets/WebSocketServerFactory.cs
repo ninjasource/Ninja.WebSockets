@@ -36,7 +36,13 @@ namespace Ninja.WebSockets
     /// </summary>
     public class WebSocketServerFactory : IWebSocketServerFactory
     {
-        Func<MemoryStream> _recycledStreamFactory;
+        private static readonly Regex _VERSION_REGEX = 
+            new Regex("Sec-WebSocket-Version: (.*)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+        private static readonly Regex _KEY_REGEX = 
+            new Regex("Sec-WebSocket-Key: (.*)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        
+        private readonly Func<MemoryStream> _recycledStreamFactory;
 
         /// <summary>
         /// Initialises a new instance of the WebSocketServerFactory class without caring about internal buffers
@@ -65,7 +71,7 @@ namespace Ninja.WebSockets
         /// <returns>Http data read from the stream</returns>
         public async Task<WebSocketHttpContext> ReadHttpHeaderFromStreamAsync(Stream stream, CancellationToken token = default(CancellationToken))
         {
-            string header = await HttpHelper.ReadHttpHeaderAsync(stream, token);
+            string header = await HttpHelper.ReadHttpHeaderAsync(stream, token).ConfigureAwait(false);
             string path = HttpHelper.GetPathFromHeader(header);
             bool isWebSocketRequest = HttpHelper.IsWebSocketUpgradeRequest(header);
             return new WebSocketHttpContext(isWebSocketRequest, header, path, stream);
@@ -78,9 +84,9 @@ namespace Ninja.WebSockets
         /// <param name="context">The http context used to initiate this web socket request</param>
         /// <param name="token">The optional cancellation token</param>
         /// <returns>A connected web socket</returns>
-        public async Task<WebSocket> AcceptWebSocketAsync(WebSocketHttpContext context, CancellationToken token = default(CancellationToken))
+        public Task<WebSocket> AcceptWebSocketAsync(WebSocketHttpContext context, CancellationToken token = default(CancellationToken))
         {
-            return await AcceptWebSocketAsync(context, new WebSocketServerOptions(), token);
+            return AcceptWebSocketAsync(context, new WebSocketServerOptions(), token);
         }
 
         /// <summary>
@@ -95,7 +101,7 @@ namespace Ninja.WebSockets
         {
             Guid guid = Guid.NewGuid();
             Events.Log.AcceptWebSocketStarted(guid);
-            await PerformHandshakeAsync(guid, context.HttpHeader, context.Stream, token);
+            await PerformHandshakeAsync(guid, context.HttpHeader, context.Stream, token).ConfigureAwait(false);
             Events.Log.ServerHandshakeSuccess(guid);
             string secWebSocketExtensions = null;
             return new WebSocketImplementation(guid, _recycledStreamFactory, context.Stream, options.KeepAliveInterval, secWebSocketExtensions, options.IncludeExceptionInCloseResponse,  isClient: false);
@@ -103,17 +109,15 @@ namespace Ninja.WebSockets
 
         private static void CheckWebSocketVersion(string httpHeader)
         {
-            Regex webSocketVersionRegex = new Regex("Sec-WebSocket-Version: (.*)");
-
             // check the version. Support version 13 and above
             const int WebSocketVersion = 13;
-            Match match = webSocketVersionRegex.Match(httpHeader);
+            Match match = _VERSION_REGEX.Match(httpHeader);
             if (match.Success)
             {
-                int secWebSocketVersion = Convert.ToInt32(match.Groups[1].Value.Trim());
+                int secWebSocketVersion = Convert.ToInt32(match.Groups[1].Value.Trim()); // [ToDo] - Improve Regex to remove Trim
                 if (secWebSocketVersion < WebSocketVersion)
                 {
-                    throw new WebSocketVersionNotSupportedException(string.Format("WebSocket Version {0} not suported. Must be {1} or above", secWebSocketVersion, WebSocketVersion));
+                    throw new WebSocketVersionNotSupportedException($"WebSocket Version {secWebSocketVersion} not suported. Must be {WebSocketVersion} or above");
                 }
             }
             else
@@ -126,13 +130,12 @@ namespace Ninja.WebSockets
         {
             try
             {
-                Regex webSocketKeyRegex = new Regex("Sec-WebSocket-Key: (.*)");
                 CheckWebSocketVersion(httpHeader);
 
-                Match match = webSocketKeyRegex.Match(httpHeader);
+                Match match = _KEY_REGEX.Match(httpHeader);
                 if (match.Success)
                 {
-                    string secWebSocketKey = match.Groups[1].Value.Trim();
+                    string secWebSocketKey = match.Groups[1].Value.Trim();// [ToDo] - Improve Regex to remove Trim
                     string setWebSocketAccept = HttpHelper.ComputeSocketAcceptString(secWebSocketKey);
                     string response = ("HTTP/1.1 101 Switching Protocols\r\n"
                                        + "Connection: Upgrade\r\n"
@@ -140,7 +143,7 @@ namespace Ninja.WebSockets
                                        + "Sec-WebSocket-Accept: " + setWebSocketAccept);
 
                     Events.Log.SendingHandshakeResponse(guid, response);
-                    await HttpHelper.WriteHttpHeaderAsync(response, stream, token);
+                    await HttpHelper.WriteHttpHeaderAsync(response, stream, token).ConfigureAwait(false);
                 }
                 else
                 {
@@ -151,13 +154,13 @@ namespace Ninja.WebSockets
             {
                 Events.Log.WebSocketVersionNotSupported(guid, ex.ToString());
                 string response = "HTTP/1.1 426 Upgrade Required\r\nSec-WebSocket-Version: 13" + ex.Message;
-                await HttpHelper.WriteHttpHeaderAsync(response, stream, token);
+                await HttpHelper.WriteHttpHeaderAsync(response, stream, token).ConfigureAwait(false);
                 throw;
             }
             catch (Exception ex)
             {
                 Events.Log.BadRequest(guid, ex.ToString());
-                await HttpHelper.WriteHttpHeaderAsync("HTTP/1.1 400 Bad Request", stream, token);
+                await HttpHelper.WriteHttpHeaderAsync("HTTP/1.1 400 Bad Request", stream, token).ConfigureAwait(false);
                 throw;
             }
         }        

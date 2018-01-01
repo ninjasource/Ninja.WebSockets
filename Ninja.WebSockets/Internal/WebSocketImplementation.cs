@@ -43,7 +43,7 @@ namespace Ninja.WebSockets.Internal
         private readonly Stream _stream;
         private readonly bool _includeExceptionInCloseResponse;
         private readonly bool _isClient;
-        private CancellationTokenSource _internalReadCts;
+        private readonly CancellationTokenSource _internalReadCts;
         private WebSocketState _state;
         private readonly IPingPongManager _pingPongManager;
         private bool _isContinuationFrame;
@@ -96,11 +96,11 @@ namespace Ninja.WebSockets.Internal
 
         public override string CloseStatusDescription => _closeStatusDescription;
 
-        public override WebSocketState State { get { return _state; } }
+        public override WebSocketState State => _state;
 
         public override string SubProtocol => null;
 
-        public TimeSpan KeepAliveInterval { get; private set; }
+        public TimeSpan KeepAliveInterval { get; }
         
         /// <summary>
         /// Receive web socket result
@@ -121,42 +121,53 @@ namespace Ninja.WebSockets.Internal
                         WebSocketFrame frame = null;
                         try
                         {
-                            frame = await WebSocketFrameReader.ReadAsync(_stream, buffer, linkedCts.Token);
+                            frame = await WebSocketFrameReader.ReadAsync(_stream, buffer, linkedCts.Token).ConfigureAwait(false);
                             Events.Log.ReceivedFrame(_guid, frame.OpCode, frame.IsFinBitSet, frame.Count);
                         }
                         catch (InternalBufferOverflowException ex)
                         {
-                            await CloseOutputAutoTimeoutAsync(WebSocketCloseStatus.MessageTooBig, "Frame too large to fit in buffer. Use message fragmentation", ex);
+                            await CloseOutputAutoTimeoutAsync(
+                                WebSocketCloseStatus.MessageTooBig, 
+                                "Frame too large to fit in buffer. Use message fragmentation", ex)
+                                .ConfigureAwait(false);
                             throw;
                         }
                         catch (ArgumentOutOfRangeException ex)
                         {
-                            await CloseOutputAutoTimeoutAsync(WebSocketCloseStatus.ProtocolError, "Payload length out of range", ex);
+                            await CloseOutputAutoTimeoutAsync(
+                                WebSocketCloseStatus.ProtocolError, 
+                                "Payload length out of range", ex)
+                                .ConfigureAwait(false);
                             throw;
                         }
                         catch (EndOfStreamException ex)
                         {
-                            await CloseOutputAutoTimeoutAsync(WebSocketCloseStatus.InvalidPayloadData, "Unexpected end of stream encountered", ex);
+                            await CloseOutputAutoTimeoutAsync(
+                                WebSocketCloseStatus.InvalidPayloadData, "Unexpected end of stream encountered", ex)
+                                .ConfigureAwait(false);
                             throw;
                         }
                         catch (OperationCanceledException ex)
                         {
-                            await CloseOutputAutoTimeoutAsync(WebSocketCloseStatus.EndpointUnavailable, "Operation cancelled", ex);
+                            await CloseOutputAutoTimeoutAsync(WebSocketCloseStatus.EndpointUnavailable, "Operation cancelled", ex)
+                                .ConfigureAwait(false);
                             throw;
                         }
                         catch (Exception ex)
                         {
-                            await CloseOutputAutoTimeoutAsync(WebSocketCloseStatus.InternalServerError, "Error reading WebSocket frame", ex);
+                            await CloseOutputAutoTimeoutAsync(
+                                WebSocketCloseStatus.InternalServerError, "Error reading WebSocket frame", ex)
+                                .ConfigureAwait(false);
                             throw;
                         }
 
                         switch (frame.OpCode)
                         {
                             case WebSocketOpCode.ConnectionClose:
-                                return await RespondToCloseFrame(frame, buffer, linkedCts.Token);
+                                return await RespondToCloseFrame(frame, buffer, linkedCts.Token).ConfigureAwait(false);
                             case WebSocketOpCode.Ping:
                                 ArraySegment<byte> pingPayload = new ArraySegment<byte>(buffer.Array, buffer.Offset, frame.Count);
-                                await SendPongAsync(pingPayload, linkedCts.Token);
+                                await SendPongAsync(pingPayload, linkedCts.Token).ConfigureAwait(false);
                                 break;
                             case WebSocketOpCode.Pong:
                                 ArraySegment<byte> pongBuffer = new ArraySegment<byte>(buffer.Array, frame.Count, buffer.Offset);
@@ -180,7 +191,8 @@ namespace Ninja.WebSockets.Internal
                                 return new WebSocketReceiveResult(frame.Count, _continuationFrameMessageType, frame.IsFinBitSet);
                             default:
                                 Exception ex = new NotSupportedException($"Unknown WebSocket opcode {frame.OpCode}");
-                                await CloseOutputAutoTimeoutAsync(WebSocketCloseStatus.ProtocolError, ex.Message, ex);
+                                await CloseOutputAutoTimeoutAsync(WebSocketCloseStatus.ProtocolError, ex.Message, ex)
+                                    .ConfigureAwait(false);
                                 throw ex;
                         }
                     }
@@ -192,7 +204,9 @@ namespace Ninja.WebSockets.Internal
                 // However, if an unhandled exception is encountered and a close message not sent then send one here
                 if (_state == WebSocketState.Open)
                 {
-                    await CloseOutputAutoTimeoutAsync(WebSocketCloseStatus.InternalServerError, "Unexpected error reading from WebSocket", catchAll);
+                    await CloseOutputAutoTimeoutAsync(
+                        WebSocketCloseStatus.InternalServerError, "Unexpected error reading from WebSocket", catchAll)
+                        .ConfigureAwait(false);
                 }
 
                 throw;
@@ -219,8 +233,8 @@ namespace Ninja.WebSockets.Internal
                     // The code below is very inefficient for small messages. Ideally we would like to have some sort of moving window
                     // of data to get the best compression. And we don't want to create new buffers which is bad for GC.
                     using (MemoryStream temp = new MemoryStream())
+                    using (DeflateStream deflateStream = new DeflateStream(temp, CompressionMode.Compress))
                     {
-                        DeflateStream deflateStream = new DeflateStream(temp, CompressionMode.Compress);
                         deflateStream.Write(buffer.Array, buffer.Offset, buffer.Count);
                         deflateStream.Flush();
                         var compressedBuffer = new ArraySegment<byte>(temp.ToArray());
@@ -234,7 +248,7 @@ namespace Ninja.WebSockets.Internal
                     Events.Log.SendingFrame(_guid, opCode, endOfMessage, buffer.Count, false);
                 }
 
-                await WriteStreamToNetwork(stream, cancellationToken);
+                await WriteStreamToNetwork(stream, cancellationToken).ConfigureAwait(false);
                 _isContinuationFrame = !endOfMessage;
             }
         }
@@ -256,7 +270,7 @@ namespace Ninja.WebSockets.Internal
                 {
                     WebSocketFrameWriter.Write(WebSocketOpCode.Ping, payload, stream, true, _isClient);
                     Events.Log.SendingFrame(_guid, WebSocketOpCode.Ping, true, payload.Count, false);
-                    await WriteStreamToNetwork(stream, cancellationToken);
+                    await WriteStreamToNetwork(stream, cancellationToken).ConfigureAwait(false);
                 }
             }
         }
@@ -283,7 +297,7 @@ namespace Ninja.WebSockets.Internal
                     WebSocketFrameWriter.Write(WebSocketOpCode.ConnectionClose, buffer, stream, true, _isClient);
                     Events.Log.CloseHandshakeStarted(_guid, closeStatus, statusDescription);
                     Events.Log.SendingFrame(_guid, WebSocketOpCode.ConnectionClose, true, buffer.Count, true);
-                    await WriteStreamToNetwork(stream, cancellationToken);
+                    await WriteStreamToNetwork(stream, cancellationToken).ConfigureAwait(false);
                     _state = WebSocketState.CloseSent;
                 }
             }
@@ -308,7 +322,7 @@ namespace Ninja.WebSockets.Internal
                     WebSocketFrameWriter.Write(WebSocketOpCode.ConnectionClose, buffer, stream, true, _isClient);
                     Events.Log.CloseOutputNoHandshake(_guid, closeStatus, statusDescription);
                     Events.Log.SendingFrame(_guid, WebSocketOpCode.ConnectionClose, true, buffer.Count, true);
-                    await WriteStreamToNetwork(stream, cancellationToken);
+                    await WriteStreamToNetwork(stream, cancellationToken).ConfigureAwait(false);
                 }
             }
             else
@@ -323,7 +337,7 @@ namespace Ninja.WebSockets.Internal
         /// <summary>
         /// Dispose will send a close frame if the connection is still open
         /// </summary>
-        public override void Dispose()
+        public override async void Dispose()
         {
             Events.Log.WebSocketDispose(_guid, _state);
 
@@ -334,7 +348,8 @@ namespace Ninja.WebSockets.Internal
                     CancellationTokenSource cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
                     try
                     {
-                        CloseOutputAsync(WebSocketCloseStatus.EndpointUnavailable, "Service is Disposed", cts.Token).Wait();
+                        await CloseOutputAsync(WebSocketCloseStatus.EndpointUnavailable, "Service is Disposed", cts.Token)
+                            .ConfigureAwait(false);
                     }
                     catch (OperationCanceledException)
                     {
@@ -369,7 +384,7 @@ namespace Ninja.WebSockets.Internal
         /// <param name="closeStatus">The close status</param>
         /// <param name="statusDescription">Optional extra close details</param>
         /// <returns>The payload to sent in the close frame</returns>
-        private ArraySegment<byte> BuildClosePayload(WebSocketCloseStatus closeStatus, string statusDescription)
+        private static ArraySegment<byte> BuildClosePayload(WebSocketCloseStatus closeStatus, string statusDescription)
         {
             byte[] statusBuffer = BitConverter.GetBytes((ushort)closeStatus);
             Array.Reverse(statusBuffer); // network byte order (big endian)
@@ -378,14 +393,12 @@ namespace Ninja.WebSockets.Internal
             {
                 return new ArraySegment<byte>(statusBuffer);
             }
-            else
-            {
-                byte[] descBuffer = Encoding.UTF8.GetBytes(statusDescription);
-                byte[] payload = new byte[statusBuffer.Length + descBuffer.Length];
-                Buffer.BlockCopy(statusBuffer, 0, payload, 0, statusBuffer.Length);
-                Buffer.BlockCopy(descBuffer, 0, payload, statusBuffer.Length, descBuffer.Length);
-                return new ArraySegment<byte>(payload);
-            }
+
+            byte[] descBuffer = Encoding.UTF8.GetBytes(statusDescription);
+            byte[] payload = new byte[statusBuffer.Length + descBuffer.Length];
+            Buffer.BlockCopy(statusBuffer, 0, payload, 0, statusBuffer.Length);
+            Buffer.BlockCopy(descBuffer, 0, payload, statusBuffer.Length, descBuffer.Length);
+            return new ArraySegment<byte>(payload);
         }
 
         /// NOTE: pong payload must be 125 bytes or less
@@ -396,7 +409,7 @@ namespace Ninja.WebSockets.Internal
             if (payload.Count > MAX_PING_PONG_PAYLOAD_LEN)
             {
                 Exception ex = new InvalidOperationException($"Max ping message size {MAX_PING_PONG_PAYLOAD_LEN} exceeded: {payload.Count}");
-                await CloseOutputAutoTimeoutAsync(WebSocketCloseStatus.ProtocolError, ex.Message, ex);
+                await CloseOutputAutoTimeoutAsync(WebSocketCloseStatus.ProtocolError, ex.Message, ex).ConfigureAwait(false);
                 throw ex;
             }
 
@@ -408,13 +421,14 @@ namespace Ninja.WebSockets.Internal
                     {
                         WebSocketFrameWriter.Write(WebSocketOpCode.Pong, payload, stream, true, _isClient);
                         Events.Log.SendingFrame(_guid, WebSocketOpCode.Pong, true, payload.Count, false);
-                        await WriteStreamToNetwork(stream, cancellationToken);
+                        await WriteStreamToNetwork(stream, cancellationToken).ConfigureAwait(false);
                     }
                 }
             }
             catch (Exception ex)
             {
-                await CloseOutputAutoTimeoutAsync(WebSocketCloseStatus.EndpointUnavailable, "Unable to send Pong response", ex);
+                await CloseOutputAutoTimeoutAsync(WebSocketCloseStatus.EndpointUnavailable, "Unable to send Pong response", ex)
+                    .ConfigureAwait(false);
                 throw;
             }
         }
@@ -445,7 +459,7 @@ namespace Ninja.WebSockets.Internal
                 {
                     WebSocketFrameWriter.Write(WebSocketOpCode.ConnectionClose, closePayload, stream, true, _isClient);
                     Events.Log.SendingFrame(_guid, WebSocketOpCode.ConnectionClose, true, closePayload.Count, false);
-                    await WriteStreamToNetwork(stream, token);
+                    await WriteStreamToNetwork(stream, token).ConfigureAwait(false);
                 }
             }
             else
@@ -482,10 +496,10 @@ namespace Ninja.WebSockets.Internal
         /// Puts data on the wire
         /// </summary>
         /// <param name="stream">The stream to read data from</param>
-        private async Task WriteStreamToNetwork(MemoryStream stream, CancellationToken cancellationToken)
+        private Task WriteStreamToNetwork(MemoryStream stream, CancellationToken cancellationToken)
         {
             ArraySegment<byte> buffer = GetBuffer(stream);
-            await _stream.WriteAsync(buffer.Array, buffer.Offset, buffer.Count, cancellationToken).ConfigureAwait(false);
+            return _stream.WriteAsync(buffer.Array, buffer.Offset, buffer.Count, cancellationToken);
         }
 
         /// <summary>
@@ -497,19 +511,17 @@ namespace Ninja.WebSockets.Internal
             {
                 return WebSocketOpCode.ContinuationFrame;
             }
-            else
+
+            switch (messageType)
             {
-                switch (messageType)
-                {
-                    case WebSocketMessageType.Binary:
-                        return WebSocketOpCode.BinaryFrame;
-                    case WebSocketMessageType.Text:
-                        return WebSocketOpCode.TextFrame;
-                    case WebSocketMessageType.Close:
-                        throw new NotSupportedException("Cannot use Send function to send a close frame. Use Close function.");
-                    default:
-                        throw new NotSupportedException($"MessageType {messageType} not supported");
-                }
+                case WebSocketMessageType.Binary:
+                    return WebSocketOpCode.BinaryFrame;
+                case WebSocketMessageType.Text:
+                    return WebSocketOpCode.TextFrame;
+                case WebSocketMessageType.Close:
+                    throw new NotSupportedException("Cannot use Send function to send a close frame. Use Close function.");
+                default:
+                    throw new NotSupportedException($"MessageType {messageType} not supported");
             }
         }
 
@@ -529,11 +541,11 @@ namespace Ninja.WebSockets.Internal
                 // we may not want to send sensitive information to the client / server
                 if (_includeExceptionInCloseResponse)
                 {
-                    statusDescription = statusDescription + "\r\n\r\n" + ex.ToString();
+                    statusDescription = statusDescription + "\r\n\r\n" + ex;
                 }
 
                 var autoCancel = new CancellationTokenSource(timeSpan);
-                await CloseOutputAsync(closeStatus, statusDescription, autoCancel.Token);
+                await CloseOutputAsync(closeStatus, statusDescription, autoCancel.Token).ConfigureAwait(false);
             }
             catch (OperationCanceledException)
             {
