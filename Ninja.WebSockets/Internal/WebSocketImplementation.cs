@@ -43,7 +43,7 @@ namespace Ninja.WebSockets.Internal
         private readonly Stream _stream;
         private readonly bool _includeExceptionInCloseResponse;
         private readonly bool _isClient;
-        private CancellationTokenSource _internalReadCts;
+        private readonly CancellationTokenSource _internalReadCts;
         private WebSocketState _state;
         private readonly IPingPongManager _pingPongManager;
         private bool _isContinuationFrame;
@@ -96,11 +96,11 @@ namespace Ninja.WebSockets.Internal
 
         public override string CloseStatusDescription => _closeStatusDescription;
 
-        public override WebSocketState State { get { return _state; } }
+        public override WebSocketState State => _state;
 
         public override string SubProtocol => null;
 
-        public TimeSpan KeepAliveInterval { get; private set; }
+        public TimeSpan KeepAliveInterval { get; }
         
         /// <summary>
         /// Receive web socket result
@@ -233,8 +233,8 @@ namespace Ninja.WebSockets.Internal
                     // The code below is very inefficient for small messages. Ideally we would like to have some sort of moving window
                     // of data to get the best compression. And we don't want to create new buffers which is bad for GC.
                     using (MemoryStream temp = new MemoryStream())
+                    using (DeflateStream deflateStream = new DeflateStream(temp, CompressionMode.Compress))
                     {
-                        DeflateStream deflateStream = new DeflateStream(temp, CompressionMode.Compress);
                         deflateStream.Write(buffer.Array, buffer.Offset, buffer.Count);
                         deflateStream.Flush();
                         var compressedBuffer = new ArraySegment<byte>(temp.ToArray());
@@ -337,7 +337,7 @@ namespace Ninja.WebSockets.Internal
         /// <summary>
         /// Dispose will send a close frame if the connection is still open
         /// </summary>
-        public override void Dispose()
+        public override async void Dispose()
         {
             Events.Log.WebSocketDispose(_guid, _state);
 
@@ -348,7 +348,8 @@ namespace Ninja.WebSockets.Internal
                     CancellationTokenSource cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
                     try
                     {
-                        CloseOutputAsync(WebSocketCloseStatus.EndpointUnavailable, "Service is Disposed", cts.Token).Wait();
+                        await CloseOutputAsync(WebSocketCloseStatus.EndpointUnavailable, "Service is Disposed", cts.Token)
+                            .ConfigureAwait(false);
                     }
                     catch (OperationCanceledException)
                     {
@@ -383,7 +384,7 @@ namespace Ninja.WebSockets.Internal
         /// <param name="closeStatus">The close status</param>
         /// <param name="statusDescription">Optional extra close details</param>
         /// <returns>The payload to sent in the close frame</returns>
-        private ArraySegment<byte> BuildClosePayload(WebSocketCloseStatus closeStatus, string statusDescription)
+        private static ArraySegment<byte> BuildClosePayload(WebSocketCloseStatus closeStatus, string statusDescription)
         {
             byte[] statusBuffer = BitConverter.GetBytes((ushort)closeStatus);
             Array.Reverse(statusBuffer); // network byte order (big endian)

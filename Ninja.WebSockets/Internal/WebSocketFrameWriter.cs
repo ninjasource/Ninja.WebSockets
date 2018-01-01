@@ -22,11 +22,11 @@
 
 using System.IO;
 using System;
-using System.Net.WebSockets;
-using System.Text;
 
 namespace Ninja.WebSockets.Internal
 {
+    using System.Buffers;
+
     // see http://tools.ietf.org/html/rfc6455 for specification
     // see fragmentation section for sending multi part messages
     // EXAMPLE: For a text message sent as three fragments, 
@@ -39,13 +39,8 @@ namespace Ninja.WebSockets.Internal
         /// This is used for data masking so that web proxies don't cache the data
         /// Therefore, there are no cryptographic concerns
         /// </summary>
-        private static readonly Random _random;
+        private static readonly Random _RANDOM = new Random((int)DateTime.Now.Ticks);
         
-        static WebSocketFrameWriter()
-        {
-            _random = new Random((int)DateTime.Now.Ticks);
-        }
-
         /// <summary>
         /// No async await stuff here because we are dealing with a memory stream
         /// </summary>
@@ -85,13 +80,22 @@ namespace Ninja.WebSockets.Internal
             // if we are creating a client frame then we MUST mack the payload as per the spec
             if (isClient)
             {
-                byte[] maskKey = new byte[WebSocketFrameCommon.MaskKeyLength];
-                _random.NextBytes(maskKey);
-                memoryStream.Write(maskKey, 0, maskKey.Length);
+                ArrayPool<byte> pool = ArrayPool<byte>.Shared;
+                int length = WebSocketFrameCommon.MaskKeyLength;
+                byte[] maskKey = pool.Rent(length);
 
-                // mask the payload
-                ArraySegment<byte> maskKeyArraySegment = new ArraySegment<byte>(maskKey, 0, maskKey.Length);
-                WebSocketFrameCommon.ToggleMask(maskKeyArraySegment, fromPayload);
+                try
+                {
+                    _RANDOM.NextBytes(maskKey);
+                    memoryStream.Write(maskKey, 0, length);
+                    
+                    // mask the payload
+                    ArraySegment<byte> maskKeyArraySegment = new ArraySegment<byte>(maskKey, 0, length);
+                    WebSocketFrameCommon.ToggleMask(maskKeyArraySegment, fromPayload);
+                } finally
+                {
+                    pool.Return(maskKey);
+                }
             }
 
             memoryStream.Write(fromPayload.Array, fromPayload.Offset, fromPayload.Count);

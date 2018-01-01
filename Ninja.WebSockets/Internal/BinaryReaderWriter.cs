@@ -51,7 +51,7 @@ namespace Ninja.WebSockets.Internal
                     .ConfigureAwait(false);
                 if (bytesRead == 0)
                 {
-                    throw new EndOfStreamException(string.Format("Unexpected end of stream encountered whilst attempting to read {0:#,##0} bytes", length));
+                    throw new EndOfStreamException($"Unexpected end of stream encountered whilst attempting to read {length:#,##0} bytes");
                 }
 
                 offset += bytesRead;

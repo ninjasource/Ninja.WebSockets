@@ -147,10 +147,11 @@ namespace Ninja.WebSockets.Internal
             {
                 len = (uint) await BinaryReaderWriter.ReadULongExactly(fromStream, false, smallBuffer, cancellationToken)
                     .ConfigureAwait(false);
-                const uint maxLen = 2147483648; // 2GB - not part of the spec but just a precaution. Send large volumes of data in smaller frames.
+                
+                const uint MaxLen = 2147483648; // 2GB - not part of the spec but just a precaution. Send large volumes of data in smaller frames.
 
                 // protect ourselves against bad data
-                if (len > maxLen || len < 0)
+                if (len > MaxLen || len < 0)
                 {
                     throw new ArgumentOutOfRangeException($"Payload length out of range. Min 0 max 2GB. Actual {len:#,##0} bytes.");
                 }

@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Ninja.WebSockets
 {
@@ -12,7 +10,7 @@ namespace Ninja.WebSockets
         /// <summary>
         /// The data extracted from a Pong WebSocket frame
         /// </summary>
-        public ArraySegment<byte> Payload { get; private set; }
+        public ArraySegment<byte> Payload { get; }
 
         /// <summary>
         /// Initialises a new instance of the PongEventArgs class

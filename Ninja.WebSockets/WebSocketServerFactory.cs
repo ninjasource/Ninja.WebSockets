@@ -36,7 +36,13 @@ namespace Ninja.WebSockets
     /// </summary>
     public class WebSocketServerFactory : IWebSocketServerFactory
     {
-        Func<MemoryStream> _recycledStreamFactory;
+        private static readonly Regex _VERSION_REGEX = 
+            new Regex("Sec-WebSocket-Version: (.*)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+        private static readonly Regex _KEY_REGEX = 
+            new Regex("Sec-WebSocket-Key: (.*)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        
+        private readonly Func<MemoryStream> _recycledStreamFactory;
 
         /// <summary>
         /// Initialises a new instance of the WebSocketServerFactory class without caring about internal buffers
@@ -103,17 +109,15 @@ namespace Ninja.WebSockets
 
         private static void CheckWebSocketVersion(string httpHeader)
         {
-            Regex webSocketVersionRegex = new Regex("Sec-WebSocket-Version: (.*)");
-
             // check the version. Support version 13 and above
             const int WebSocketVersion = 13;
-            Match match = webSocketVersionRegex.Match(httpHeader);
+            Match match = _VERSION_REGEX.Match(httpHeader);
             if (match.Success)
             {
-                int secWebSocketVersion = Convert.ToInt32(match.Groups[1].Value.Trim());
+                int secWebSocketVersion = Convert.ToInt32(match.Groups[1].Value.Trim()); // [ToDo] - Improve Regex to remove Trim
                 if (secWebSocketVersion < WebSocketVersion)
                 {
-                    throw new WebSocketVersionNotSupportedException(string.Format("WebSocket Version {0} not suported. Must be {1} or above", secWebSocketVersion, WebSocketVersion));
+                    throw new WebSocketVersionNotSupportedException($"WebSocket Version {secWebSocketVersion} not suported. Must be {WebSocketVersion} or above");
                 }
             }
             else
@@ -126,13 +130,12 @@ namespace Ninja.WebSockets
         {
             try
             {
-                Regex webSocketKeyRegex = new Regex("Sec-WebSocket-Key: (.*)");
                 CheckWebSocketVersion(httpHeader);
 
-                Match match = webSocketKeyRegex.Match(httpHeader);
+                Match match = _KEY_REGEX.Match(httpHeader);
                 if (match.Success)
                 {
-                    string secWebSocketKey = match.Groups[1].Value.Trim();
+                    string secWebSocketKey = match.Groups[1].Value.Trim();// [ToDo] - Improve Regex to remove Trim
                     string setWebSocketAccept = HttpHelper.ComputeSocketAcceptString(secWebSocketKey);
                     string response = ("HTTP/1.1 101 Switching Protocols\r\n"
                                        + "Connection: Upgrade\r\n"

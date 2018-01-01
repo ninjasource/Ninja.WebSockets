@@ -39,7 +39,7 @@ namespace Ninja.WebSockets
         private readonly TimeSpan _keepAliveInterval;
         private readonly Task _pingTask;
         private readonly CancellationToken _cancellationToken;
-        private Stopwatch _stopwatch;
+        private readonly Stopwatch _stopwatch;
         private long _pingSentTicks;
 
         /// <summary>
@@ -53,6 +53,7 @@ namespace Ninja.WebSockets
         /// TimeSpan.Zero when you create the WebSocket instance (using a factory) otherwise you may be automatically
         /// be sending duplicate Ping messages (see keepAliveInterval below)
         /// </summary>
+        /// <param name="guid">The guid</param>
         /// <param name="webSocket">The web socket used to listen to ping messages and send pong messages</param>
         /// <param name="keepAliveInterval">The time between automatically sending ping messages. 
         /// Set this to TimeSpan.Zero if you with to manually control sending ping messages.
