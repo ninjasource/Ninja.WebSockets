@@ -14,6 +14,35 @@ namespace Ninja.WebSockets.UnitTests
     public class WebSocketClientTests
     {
         [Fact]
+        public async Task CanCancelReceive()
+        {
+            Func<MemoryStream> memoryStreamFactory = () => new MemoryStream();
+            var theInternet = new TheInternet();
+            var webSocketClient = new WebSocketImplementation(Guid.NewGuid(), memoryStreamFactory, theInternet.ClientNetworkStream, TimeSpan.Zero, null, false, true);
+            var webSocketServer = new WebSocketImplementation(Guid.NewGuid(), memoryStreamFactory, theInternet.ServerNetworkStream, TimeSpan.Zero, null, false, false);
+            CancellationTokenSource tokenSource = new CancellationTokenSource();
+            ArraySegment<byte> buffer = new ArraySegment<byte>(new byte[10]);
+
+            tokenSource.Cancel();
+
+            await Assert.ThrowsAsync<OperationCanceledException>(() => webSocketClient.ReceiveAsync(buffer, tokenSource.Token));
+        }
+
+        [Fact]
+        public async Task CanCancelSend()
+        {
+            Func<MemoryStream> memoryStreamFactory = () => new MemoryStream();
+            var theInternet = new TheInternet();
+            var webSocketClient = new WebSocketImplementation(Guid.NewGuid(), memoryStreamFactory, theInternet.ClientNetworkStream, TimeSpan.Zero, null, false, true);
+            CancellationTokenSource tokenSource = new CancellationTokenSource();
+            ArraySegment<byte> buffer = new ArraySegment<byte>(new byte[10]);
+
+            tokenSource.Cancel();
+
+            await Assert.ThrowsAsync<OperationCanceledException>(() => webSocketClient.SendAsync(buffer, WebSocketMessageType.Binary, true, tokenSource.Token));
+        }
+
+        [Fact]
         public async Task SimpleSend()
         {
             Func<MemoryStream> memoryStreamFactory = () => new MemoryStream();
@@ -40,7 +69,7 @@ namespace Ninja.WebSockets.UnitTests
         }
     
         [Fact]
-        public async Task SimpleNamesPipes()
+        public async Task SimpleNamedPipes()
         {
             Func<MemoryStream> memoryStreamFactory = () => new MemoryStream();
             string pipeName = Guid.NewGuid().ToString();
