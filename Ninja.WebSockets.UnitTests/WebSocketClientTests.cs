@@ -69,7 +69,7 @@ namespace Ninja.WebSockets.UnitTests
         }
     
         [Fact]
-        public async Task SimpleNamesPipes()
+        public async Task SimpleNamedPipes()
         {
             Func<MemoryStream> memoryStreamFactory = () => new MemoryStream();
             string pipeName = Guid.NewGuid().ToString();
