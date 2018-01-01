@@ -8,16 +8,16 @@ namespace WebSockets.DemoClient
 {
     class Program
     {
-        static void Main(string[] args)
+        private static async Task Main(string[] args)
         {
             if (args.Length == 0)
             {
-                RunSimpleTest().Wait();
+                await RunSimpleTest();
             }
             else if (args.Length == 5)
             {
                 // ws://localhost:27416/echo 5 1000 5000 40000
-                RunComplexTest(args).Wait();
+                RunComplexTest(args);
             }
             else
             {
@@ -30,7 +30,7 @@ namespace WebSockets.DemoClient
             Console.ReadLine();
         }
 
-        private static async Task RunComplexTest(string[] args)
+        private static void RunComplexTest(string[] args)
         {
             Uri uri = new Uri(args[0]);
             Int32.TryParse(args[1], out int numThreads);
