@@ -5,6 +5,8 @@ A concrete implementation of the .Net Standard 2.0 System.Net.WebSockets.WebSock
 A WebSocket library that allows you to make WebSocket connections as a client or to respond to WebSocket requests as a server.
 You can safely pass around a general purpose WebSocket instance throughout your codebase without tying yourself strongly to this library. This is the same WebSocket abstract class used by .net core 2.0 and it allows for asynchronous Websocket communication for improved performance and scalability.
 
+* NuGet at: https://www.nuget.org/packages/Ninja.WebSockets
+
 ### Dependencies
 
 No dependencies. 
