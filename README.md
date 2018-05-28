@@ -36,7 +36,6 @@ Client and Server send and receive data the same way.
 
 Receiving Data:
 
-Receive data in an infinite loop until we receive a close frame from the server
 ```csharp
 private async Task Receive(WebSocket webSocket)
 {
@@ -57,6 +56,8 @@ private async Task Receive(WebSocket webSocket)
     }
 }
 ```
+
+Receive data in an infinite loop until we receive a close frame from the server.
 
 Sending Data:
 ```csharp
