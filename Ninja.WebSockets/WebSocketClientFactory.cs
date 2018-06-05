@@ -49,7 +49,8 @@ namespace Ninja.WebSockets
         /// </summary>
         public WebSocketClientFactory()
         {
-            _bufferPool = () => new MemoryStream(new byte[256], 0, 256, true, true);
+            const int BUFFERSIZE = 8192;
+            _bufferPool = () => new MemoryStream(new byte[BUFFERSIZE], 0, BUFFERSIZE, true, true);
         }
 
         /// <summary>
