@@ -42,23 +42,23 @@ namespace Ninja.WebSockets
     /// </summary>
     public class WebSocketClientFactory : IWebSocketClientFactory
     {
-        Func<MemoryStream> _recycledStreamFactory;
+        Func<MemoryStream> _bufferPool;
 
         /// <summary>
         /// Initialises a new instance of the WebSocketClientFactory class without caring about internal buffers
         /// </summary>
         public WebSocketClientFactory()
         {
-            _recycledStreamFactory = () => new MemoryStream();
+            _bufferPool = () => new MemoryStream(new byte[256], 0, 256, true, true);
         }
 
         /// <summary>
         /// Initialises a new instance of the WebSocketClientFactory class with control over internal buffer creation
         /// </summary>
-        /// <param name="recycledStreamFactory">Used to get a recyclable memory stream. This can be used with the RecyclableMemoryStreamManager class</param>
-        public WebSocketClientFactory(Func<MemoryStream> recycledStreamFactory)
+        /// <param name="bufferPool">Used to get a memory stream. Feel free to implement your own buffer pool. MemoryStreams will be disposed when no longer needed and can be returned to the pool.</param>
+        public WebSocketClientFactory(Func<MemoryStream> bufferPool)
         {
-            _recycledStreamFactory = recycledStreamFactory;
+            _bufferPool = bufferPool;
         }
 
         /// <summary>
@@ -102,7 +102,7 @@ namespace Ninja.WebSockets
 
             token.ThrowIfCancellationRequested();
             Stream stream = GetStream(guid, tcpClient, useSsl, host);
-            return await PerformHandshake(guid, uri, stream, options, token);            
+            return await PerformHandshake(guid, uri, stream, options, token);
         }
 
         /// <summary>
@@ -140,7 +140,7 @@ namespace Ninja.WebSockets
 
             ThrowIfInvalidResponseCode(response);
             ThrowIfInvalidAcceptString(guid, response, secWebSocketKey);
-            return new WebSocketImplementation(guid, _recycledStreamFactory, responseStream, keepAliveInterval, secWebSocketExtensions, includeExceptionInCloseResponse, isClient: true);
+            return new WebSocketImplementation(guid, _bufferPool, responseStream, keepAliveInterval, secWebSocketExtensions, includeExceptionInCloseResponse, isClient: true);
         }
 
         private void ThrowIfInvalidAcceptString(Guid guid, string response, string secWebSocketKey)
@@ -236,7 +236,7 @@ namespace Ninja.WebSockets
             else
             {
                 StringBuilder builder = new StringBuilder();
-                foreach(KeyValuePair<string,string> pair in additionalHeaders)
+                foreach (KeyValuePair<string, string> pair in additionalHeaders)
                 {
                     builder.Append($"{pair.Key}: {pair.Value}\r\n");
                 }

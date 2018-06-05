@@ -1,0 +1,72 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{548575A5-C028-46CB-B469-6EAB2CECC1DE}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Ninja.WebSockets</RootNamespace>
+    <AssemblyName>Ninja.WebSockets</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Ninja.WebSockets\Exceptions\EntityTooLargeException.cs" />
+    <Compile Include="Ninja.WebSockets\Exceptions\InvalidHttpResponseCodeException.cs" />
+    <Compile Include="Ninja.WebSockets\Exceptions\SecWebSocketKeyMissingException.cs" />
+    <Compile Include="Ninja.WebSockets\Exceptions\ServerListenerSocketException.cs" />
+    <Compile Include="Ninja.WebSockets\Exceptions\WebSocketBufferOverflowException.cs" />
+    <Compile Include="Ninja.WebSockets\Exceptions\WebSocketHandshakeFailedException.cs" />
+    <Compile Include="Ninja.WebSockets\Exceptions\WebSocketVersionNotSupportedException.cs" />
+    <Compile Include="Ninja.WebSockets\HttpHelper.cs" />
+    <Compile Include="Ninja.WebSockets\Internal\BinaryReaderWriter.cs" />
+    <Compile Include="Ninja.WebSockets\Internal\Events.cs" />
+    <Compile Include="Ninja.WebSockets\Internal\WebSocketFrame.cs" />
+    <Compile Include="Ninja.WebSockets\Internal\WebSocketFrameCommon.cs" />
+    <Compile Include="Ninja.WebSockets\Internal\WebSocketFrameReader.cs" />
+    <Compile Include="Ninja.WebSockets\Internal\WebSocketFrameWriter.cs" />
+    <Compile Include="Ninja.WebSockets\Internal\WebSocketImplementation.cs" />
+    <Compile Include="Ninja.WebSockets\Internal\WebSocketOpCode.cs" />
+    <Compile Include="Ninja.WebSockets\IPingPongManager.cs" />
+    <Compile Include="Ninja.WebSockets\IWebSocketClientFactory.cs" />
+    <Compile Include="Ninja.WebSockets\IWebSocketServerFactory.cs" />
+    <Compile Include="Ninja.WebSockets\PingPongManager.cs" />
+    <Compile Include="Ninja.WebSockets\PongEventArgs.cs" />
+    <Compile Include="Ninja.WebSockets\WebSocketClientFactory.cs" />
+    <Compile Include="Ninja.WebSockets\WebSocketClientOptions.cs" />
+    <Compile Include="Ninja.WebSockets\WebSocketHttpContext.cs" />
+    <Compile Include="Ninja.WebSockets\WebSocketServerFactory.cs" />
+    <Compile Include="Ninja.WebSockets\WebSocketServerOptions.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>

@@ -1,12 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
-using Microsoft.IO;
-using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.IO;
-using System.Net.WebSockets;
-using System.Threading.Tasks;
 using Ninja.WebSockets;
+using System;
+using System.Threading.Tasks;
 
 namespace WebSockets.DemoServer
 {
@@ -15,17 +10,13 @@ namespace WebSockets.DemoServer
         static ILogger _logger;
         static ILoggerFactory _loggerFactory;
         static IWebSocketServerFactory _webSocketServerFactory;
-        static RecyclableMemoryStreamManager _recyclableMemoryStreamManager;
 
         static void Main(string[] args)
         {
             _loggerFactory = new LoggerFactory();
             _loggerFactory.AddConsole(LogLevel.Trace);
             _logger = _loggerFactory.CreateLogger<Program>();
-            const int DefaultBlockSize = 16 * 1024;
-            const int MaxBufferSize = 128 * 1024;
-            _recyclableMemoryStreamManager = new RecyclableMemoryStreamManager(DefaultBlockSize, 4, MaxBufferSize);
-            _webSocketServerFactory = new WebSocketServerFactory(_recyclableMemoryStreamManager.GetStream);
+            _webSocketServerFactory = new WebSocketServerFactory();
             Task task = StartWebServer();
             task.Wait();
         }

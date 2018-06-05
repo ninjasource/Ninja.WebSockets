@@ -36,25 +36,24 @@ namespace Ninja.WebSockets
     /// </summary>
     public class WebSocketServerFactory : IWebSocketServerFactory
     {
-        Func<MemoryStream> _recycledStreamFactory;
+        Func<MemoryStream> _bufferPool;
 
         /// <summary>
         /// Initialises a new instance of the WebSocketServerFactory class without caring about internal buffers
         /// </summary>
         public WebSocketServerFactory()
         {
-            _recycledStreamFactory = () => new MemoryStream();
+            _bufferPool = () => new MemoryStream(new byte[256], 0, 256, true, true);
         }
 
         /// <summary>
         /// Initialises a new instance of the WebSocketClientFactory class with control over internal buffer creation
         /// </summary>
-        /// <param name="recycledStreamFactory">Used to get a recyclable memory stream. 
-        /// This can be used with the RecyclableMemoryStreamManager class to limit LOH fragmentation and improve performance
+        /// <param name="bufferPool">Used to get a memory stream. Feel free to implement your own buffer pool. MemoryStreams will be disposed when no longer needed and can be returned to the pool.</param>
         /// </param>
-        public WebSocketServerFactory(Func<MemoryStream> recycledStreamFactory)
+        public WebSocketServerFactory(Func<MemoryStream> bufferPool)
         {
-            _recycledStreamFactory = recycledStreamFactory;
+            _bufferPool = bufferPool;
         }
 
         /// <summary>
@@ -98,7 +97,7 @@ namespace Ninja.WebSockets
             await PerformHandshakeAsync(guid, context.HttpHeader, context.Stream, token);
             Events.Log.ServerHandshakeSuccess(guid);
             string secWebSocketExtensions = null;
-            return new WebSocketImplementation(guid, _recycledStreamFactory, context.Stream, options.KeepAliveInterval, secWebSocketExtensions, options.IncludeExceptionInCloseResponse,  isClient: false);
+            return new WebSocketImplementation(guid, _bufferPool, context.Stream, options.KeepAliveInterval, secWebSocketExtensions, options.IncludeExceptionInCloseResponse, isClient: false);
         }
 
         private static void CheckWebSocketVersion(string httpHeader)
@@ -160,6 +159,6 @@ namespace Ninja.WebSockets
                 await HttpHelper.WriteHttpHeaderAsync("HTTP/1.1 400 Bad Request", stream, token);
                 throw;
             }
-        }        
+        }
     }
 }

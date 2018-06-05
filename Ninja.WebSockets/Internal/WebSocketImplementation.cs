@@ -235,7 +235,7 @@ namespace Ninja.WebSockets.Internal
                 }
 
                 await WriteStreamToNetwork(stream, cancellationToken);
-                _isContinuationFrame = !endOfMessage;
+                _isContinuationFrame = !endOfMessage; // TODO: is this correct??
             }
         }
 
@@ -456,35 +456,14 @@ namespace Ninja.WebSockets.Internal
             return new WebSocketReceiveResult(frame.Count, WebSocketMessageType.Close, frame.IsFinBitSet, frame.CloseStatus, frame.CloseStatusDescription);
         }
 
-        private ArraySegment<byte> GetBuffer(MemoryStream stream)
-        {
-            // Avoid calling ToArray on the MemoryStream because it allocates a new byte array on tha heap
-            // We avaoid this by attempting to access the internal memory stream buffer
-            // This works with supported streams like the recyclable memory stream and writable memory streams
-            if (!stream.TryGetBuffer(out ArraySegment<byte> buffer))
-            {
-                if (!_tryGetBufferFailureLogged)
-                {
-                    Events.Log.TryGetBufferNotSupported(_guid, stream?.GetType()?.ToString());
-                    _tryGetBufferFailureLogged = true;
-                }
-
-                // internal buffer not suppoted, fall back to ToArray()
-                byte[] array = stream.ToArray();
-                buffer = new ArraySegment<byte>(array, 0, array.Length);
-            }
-
-            return new ArraySegment<byte>(buffer.Array, buffer.Offset, (int)stream.Position);
-        }
-
-
         /// <summary>
         /// Puts data on the wire
         /// </summary>
         /// <param name="stream">The stream to read data from</param>
         private async Task WriteStreamToNetwork(MemoryStream stream, CancellationToken cancellationToken)
         {
-            ArraySegment<byte> buffer = GetBuffer(stream);
+            // note if this throws UnauthorisedAccessException then you need to make your memory stream internal buffer public
+            ArraySegment<byte> buffer = new ArraySegment<byte>(stream.GetBuffer(), 0, (int)stream.Position);
             await _stream.WriteAsync(buffer.Array, buffer.Offset, buffer.Count, cancellationToken).ConfigureAwait(false);
         }
 
