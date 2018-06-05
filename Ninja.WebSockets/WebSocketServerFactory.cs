@@ -137,6 +137,7 @@ namespace Ninja.WebSockets
                     string response = ("HTTP/1.1 101 Switching Protocols\r\n"
                                        + "Connection: Upgrade\r\n"
                                        + "Upgrade: websocket\r\n"
+                                       + "Sec-WebSocket-Protocol: \r\n"
                                        + "Sec-WebSocket-Accept: " + setWebSocketAccept);
 
                     Events.Log.SendingHandshakeResponse(guid, response);
