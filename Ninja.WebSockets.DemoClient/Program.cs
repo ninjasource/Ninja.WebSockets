@@ -23,7 +23,7 @@ namespace WebSockets.DemoClient
             {
                 Console.WriteLine("Wrong number of arguments. 0 for simple test. 5 for complex test.");
                 Console.WriteLine($"Complex Test: uri numThreads numItemsPerThread minNumBytesPerMessage maxNumBytesPerMessage");
-                Console.WriteLine("e.g: ws://192.168.1.105:27416/echo 5 100 4 4");
+                Console.WriteLine("e.g: ws://localhost:27416/chat/echo 5 100 4 4");
             }
 
             Console.WriteLine("Press Enter to quit");

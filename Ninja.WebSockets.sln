@@ -19,8 +19,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		README.md = README.md
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ninja.WebSockets.Net45", "Ninja.WebSockets.Net45.csproj", "{548575A5-C028-46CB-B469-6EAB2CECC1DE}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -43,10 +41,6 @@ Global
 		{E292CCA7-0C73-4520-8B86-A614637648A9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E292CCA7-0C73-4520-8B86-A614637648A9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E292CCA7-0C73-4520-8B86-A614637648A9}.Release|Any CPU.Build.0 = Release|Any CPU
-		{548575A5-C028-46CB-B469-6EAB2CECC1DE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{548575A5-C028-46CB-B469-6EAB2CECC1DE}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{548575A5-C028-46CB-B469-6EAB2CECC1DE}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{548575A5-C028-46CB-B469-6EAB2CECC1DE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

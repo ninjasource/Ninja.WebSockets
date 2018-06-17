@@ -50,7 +50,7 @@ namespace Ninja.WebSockets.Internal
             await BinaryReaderWriter.ReadExactly(2, fromStream, smallBuffer, cancellationToken);
             byte byte1 = smallBuffer.Array[0];
             byte byte2 = smallBuffer.Array[1];
-
+            
             // process first byte
             byte finBitFlag = 0x80;
             byte opCodeFlag = 0x0F;
@@ -107,7 +107,6 @@ namespace Ninja.WebSockets.Internal
                 else
                 {
                     closeStatus = WebSocketCloseStatus.Empty;
-                    // Events.Log.WebSocketCloseStatusUnknown()
                 }
 
                 int offset = buffer.Offset + 2;

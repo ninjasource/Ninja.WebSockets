@@ -436,8 +436,9 @@ namespace Ninja.WebSockets.Internal
             }
             else if (_state == WebSocketState.Open)
             {
-                // this is in response to a close handshake initiated by the remote instance
-                ArraySegment<byte> closePayload = new ArraySegment<byte>(buffer.Array, buffer.Offset, frame.Count);
+                // do not echo the close payload back to the client, there is no requirement for it in the spec. 
+                // However, the same CloseStatus as recieved should be sent back.
+                ArraySegment<byte> closePayload = new ArraySegment<byte>(new byte[0], 0, 0);
                 _state = WebSocketState.CloseReceived;
                 Events.Log.CloseHandshakeRespond(_guid, frame.CloseStatus, frame.CloseStatusDescription);
 
@@ -457,13 +458,58 @@ namespace Ninja.WebSockets.Internal
         }
 
         /// <summary>
+        /// Note that the way in which the stream buffer is accessed can lead to significant performance problems
+        /// You want to avoid a call to stream.ToArray to avoid extra memory allocation
+        /// MemoryStream can be configured to have its internal buffer accessible. 
+        /// </summary>
+        private ArraySegment<byte> GetBuffer(MemoryStream stream)
+        {
+#if NET45
+            // NET45 does not have a TryGetBuffer function on Stream
+            if (_tryGetBufferFailureLogged)
+            {
+                return new ArraySegment<byte>(stream.ToArray(), 0, (int)stream.Position);
+            }
+
+            // note that a MemoryStream will throw an UnuthorizedAccessException if the internal buffer is not public. Set publiclyVisible = true
+            try
+            {
+                return new ArraySegment<byte>(stream.GetBuffer(), 0, (int)stream.Position);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                Events.Log.TryGetBufferNotSupported(_guid, stream?.GetType()?.ToString());
+                _tryGetBufferFailureLogged = true;
+                return new ArraySegment<byte>(stream.ToArray(), 0, (int)stream.Position);
+            }
+#else
+            // Avoid calling ToArray on the MemoryStream because it allocates a new byte array on tha heap
+            // We avaoid this by attempting to access the internal memory stream buffer
+            // This works with supported streams like the recyclable memory stream and writable memory streams
+            if (!stream.TryGetBuffer(out ArraySegment<byte> buffer))
+            {
+                if (!_tryGetBufferFailureLogged)
+                {
+                    Events.Log.TryGetBufferNotSupported(_guid, stream?.GetType()?.ToString());
+                    _tryGetBufferFailureLogged = true;
+                }
+
+                // internal buffer not suppoted, fall back to ToArray()
+                byte[] array = stream.ToArray();
+                buffer = new ArraySegment<byte>(array, 0, array.Length);
+            }
+
+            return new ArraySegment<byte>(buffer.Array, buffer.Offset, (int)stream.Position);
+#endif
+        }
+
+        /// <summary>
         /// Puts data on the wire
         /// </summary>
         /// <param name="stream">The stream to read data from</param>
         private async Task WriteStreamToNetwork(MemoryStream stream, CancellationToken cancellationToken)
         {
-            // note if this throws UnauthorisedAccessException then you need to make your memory stream internal buffer public
-            ArraySegment<byte> buffer = new ArraySegment<byte>(stream.GetBuffer(), 0, (int)stream.Position);
+            ArraySegment<byte> buffer = GetBuffer(stream);
             await _stream.WriteAsync(buffer.Array, buffer.Offset, buffer.Count, cancellationToken).ConfigureAwait(false);
         }
 

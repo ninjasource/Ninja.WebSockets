@@ -36,15 +36,16 @@ namespace Ninja.WebSockets
     /// </summary>
     public class WebSocketServerFactory : IWebSocketServerFactory
     {
-        Func<MemoryStream> _bufferPool;
+        private readonly Func<MemoryStream> _bufferFactory;
+        private readonly IBufferPool _bufferPool;
 
         /// <summary>
         /// Initialises a new instance of the WebSocketServerFactory class without caring about internal buffers
         /// </summary>
         public WebSocketServerFactory()
         {
-            const int BUFFERSIZE = 8192;
-            _bufferPool = () => new MemoryStream(new byte[BUFFERSIZE], 0, BUFFERSIZE, true, true);
+            _bufferPool = new BufferPool();
+            _bufferFactory = _bufferPool.GetBuffer;
         }
 
         /// <summary>
@@ -52,9 +53,9 @@ namespace Ninja.WebSockets
         /// </summary>
         /// <param name="bufferPool">Used to get a memory stream. Feel free to implement your own buffer pool. MemoryStreams will be disposed when no longer needed and can be returned to the pool.</param>
         /// </param>
-        public WebSocketServerFactory(Func<MemoryStream> bufferPool)
+        public WebSocketServerFactory(Func<MemoryStream> bufferFactory)
         {
-            _bufferPool = bufferPool;
+            _bufferFactory = bufferFactory;
         }
 
         /// <summary>
@@ -98,7 +99,7 @@ namespace Ninja.WebSockets
             await PerformHandshakeAsync(guid, context.HttpHeader, context.Stream, token);
             Events.Log.ServerHandshakeSuccess(guid);
             string secWebSocketExtensions = null;
-            return new WebSocketImplementation(guid, _bufferPool, context.Stream, options.KeepAliveInterval, secWebSocketExtensions, options.IncludeExceptionInCloseResponse, isClient: false);
+            return new WebSocketImplementation(guid, _bufferFactory, context.Stream, options.KeepAliveInterval, secWebSocketExtensions, options.IncludeExceptionInCloseResponse, isClient: false);
         }
 
         private static void CheckWebSocketVersion(string httpHeader)

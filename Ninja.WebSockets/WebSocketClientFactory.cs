@@ -42,24 +42,25 @@ namespace Ninja.WebSockets
     /// </summary>
     public class WebSocketClientFactory : IWebSocketClientFactory
     {
-        Func<MemoryStream> _bufferPool;
+        private readonly Func<MemoryStream> _bufferFactory;
+        private readonly IBufferPool _bufferPool;
 
         /// <summary>
         /// Initialises a new instance of the WebSocketClientFactory class without caring about internal buffers
         /// </summary>
         public WebSocketClientFactory()
         {
-            const int BUFFERSIZE = 8192;
-            _bufferPool = () => new MemoryStream(new byte[BUFFERSIZE], 0, BUFFERSIZE, true, true);
+            _bufferPool = new BufferPool();
+            _bufferFactory = _bufferPool.GetBuffer;
         }
 
         /// <summary>
         /// Initialises a new instance of the WebSocketClientFactory class with control over internal buffer creation
         /// </summary>
-        /// <param name="bufferPool">Used to get a memory stream. Feel free to implement your own buffer pool. MemoryStreams will be disposed when no longer needed and can be returned to the pool.</param>
-        public WebSocketClientFactory(Func<MemoryStream> bufferPool)
+        /// <param name="bufferFactory">Used to get a memory stream. Feel free to implement your own buffer pool. MemoryStreams will be disposed when no longer needed and can be returned to the pool.</param>
+        public WebSocketClientFactory(Func<MemoryStream> bufferFactory)
         {
-            _bufferPool = bufferPool;
+            _bufferFactory = bufferFactory;
         }
 
         /// <summary>
@@ -141,7 +142,7 @@ namespace Ninja.WebSockets
 
             ThrowIfInvalidResponseCode(response);
             ThrowIfInvalidAcceptString(guid, response, secWebSocketKey);
-            return new WebSocketImplementation(guid, _bufferPool, responseStream, keepAliveInterval, secWebSocketExtensions, includeExceptionInCloseResponse, isClient: true);
+            return new WebSocketImplementation(guid, _bufferFactory, responseStream, keepAliveInterval, secWebSocketExtensions, includeExceptionInCloseResponse, isClient: true);
         }
 
         private void ThrowIfInvalidAcceptString(Guid guid, string response, string secWebSocketKey)

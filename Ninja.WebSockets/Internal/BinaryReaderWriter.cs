@@ -38,9 +38,8 @@ namespace Ninja.WebSockets.Internal
 
             if (buffer.Count < length)
             {
-                // TODO: it is not impossible to get rid of this, just a little tricky
-                // if the supplied buffer is too small for the payload then we should only return the number of bytes in the buffer
-                // this will have to propogate all the way up the chain
+                // This will happen if the calling function supplied a buffer that was too small to fit the payload of the websocket frame.
+                // Note that this can happen on the close handshake where the message size can be larger than the regular payload
                 throw new InternalBufferOverflowException($"Unable to read {length} bytes into buffer (offset: {buffer.Offset} size: {buffer.Count}). Use a larger read buffer");
             }
 

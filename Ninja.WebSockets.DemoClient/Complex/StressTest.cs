@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
@@ -19,6 +20,7 @@ namespace WebSockets.DemoClient.Complex
         WebSocket _webSocket;
         CancellationToken _token;
         byte[][] _expectedValues;
+        private readonly IWebSocketClientFactory _clientFactory;
 
         public StressTest(int seed, Uri uri, int numItems, int minNumBytesPerMessage, int maxNumBytesPerMessage)
         {
@@ -27,13 +29,14 @@ namespace WebSockets.DemoClient.Complex
             _numItems = numItems;
             _minNumBytesPerMessage = minNumBytesPerMessage;
             _maxNumBytesPerMessage = maxNumBytesPerMessage;
+            _clientFactory = new WebSocketClientFactory();
         }
 
         public async Task Run()
         {
-            var factory = new WebSocketClientFactory();
+            
             WebSocketClientOptions options = new WebSocketClientOptions() { NoDelay = true, KeepAliveInterval = TimeSpan.Zero };
-            using (_webSocket = await factory.ConnectAsync(_uri, options))
+            using (_webSocket = await _clientFactory.ConnectAsync(_uri, options))
             {
                 var source = new CancellationTokenSource();
                 _token = source.Token;
@@ -59,7 +62,7 @@ namespace WebSockets.DemoClient.Complex
                     await _webSocket.SendAsync(buffer, WebSocketMessageType.Binary, true, source.Token);
                 }
 
-                await _webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "So long and thanks for all the bits", source.Token);
+                await _webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, null, source.Token);
                 recTask.Wait();
             }
         }

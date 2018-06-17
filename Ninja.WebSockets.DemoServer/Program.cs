@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using Ninja.WebSockets;
 using System;
+using System.IO;
 using System.Threading.Tasks;
 
 namespace WebSockets.DemoServer
