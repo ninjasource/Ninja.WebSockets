@@ -52,8 +52,7 @@ namespace WebSockets.DemoServer
                 WebSocketHttpContext context = await _webSocketServerFactory.ReadHttpHeaderFromStreamAsync(stream);
                 if (context.IsWebSocketRequest)
                 {
-                    // disable ping pong for now (it is causing multi-threaded issues)
-                    var options = new WebSocketServerOptions() { KeepAliveInterval = TimeSpan.Zero };
+                    var options = new WebSocketServerOptions() { KeepAliveInterval = TimeSpan.FromSeconds(30) };
                     _logger.LogInformation("Http header has requested an upgrade to Web Socket protocol. Negotiating Web Socket handshake");
                     WebSocket webSocket = await _webSocketServerFactory.AcceptWebSocketAsync(context, options);
 

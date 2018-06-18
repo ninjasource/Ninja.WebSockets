@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;net45</TargetFrameworks>
-    <Version>1.0.0</Version>
+    <Version>1.0.1</Version>
     <Authors>David Haig</Authors>
     <Company>David Haig</Company>
     <Copyright>David Haig</Copyright>
@@ -14,8 +14,10 @@
 
 A WebSocket library that allows you to make WebSocket connections as a client or to respond to WebSocket requests as a server. You can safely pass around a general purpose WebSocket instance throughout your codebase without tying yourself strongly to this library. This is the same WebSocket abstract class used by .net core 2.0 and it allows for asynchronous Websocket communication for improved performance and scalability.</Description>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <PackageReleaseNotes>Performance improvements and support for .net45</PackageReleaseNotes>
+    <PackageReleaseNotes>Fixed issue with clients connecting with lower case HTTP headers</PackageReleaseNotes>
     <PackageTags>WebSockets, Web Sockets, WebSocket, Web Socket, .netstandard,</PackageTags>
+    <AssemblyVersion>1.0.0.1</AssemblyVersion>
+    <FileVersion>1.0.0.1</FileVersion>
   </PropertyGroup>
 
 </Project>

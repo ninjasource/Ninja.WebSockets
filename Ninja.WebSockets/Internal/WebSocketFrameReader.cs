@@ -63,18 +63,25 @@ namespace Ninja.WebSockets.Internal
             uint len = await ReadLength(byte2, smallBuffer, fromStream, cancellationToken);
             int count = (int)len;
 
-            // use the masking key to decode the data if needed
-            if (isMaskBitSet)
+            try
             {
-                ArraySegment<byte> maskKey = new ArraySegment<byte>(smallBuffer.Array, 0, WebSocketFrameCommon.MaskKeyLength);
-                await BinaryReaderWriter.ReadExactly(maskKey.Count, fromStream, maskKey, cancellationToken);
-                await BinaryReaderWriter.ReadExactly(count, fromStream, intoBuffer, cancellationToken);
-                ArraySegment<byte> payloadToMask = new ArraySegment<byte>(intoBuffer.Array, intoBuffer.Offset, count);
-                WebSocketFrameCommon.ToggleMask(maskKey, payloadToMask);
-            }
-            else
+                // use the masking key to decode the data if needed
+                if (isMaskBitSet)
+                {
+                    ArraySegment<byte> maskKey = new ArraySegment<byte>(smallBuffer.Array, 0, WebSocketFrameCommon.MaskKeyLength);
+                    await BinaryReaderWriter.ReadExactly(maskKey.Count, fromStream, maskKey, cancellationToken);
+                    await BinaryReaderWriter.ReadExactly(count, fromStream, intoBuffer, cancellationToken);
+                    ArraySegment<byte> payloadToMask = new ArraySegment<byte>(intoBuffer.Array, intoBuffer.Offset, count);
+                    WebSocketFrameCommon.ToggleMask(maskKey, payloadToMask);
+                }
+                else
+                {
+                    await BinaryReaderWriter.ReadExactly(count, fromStream, intoBuffer, cancellationToken);
+                }
+            } 
+            catch (InternalBufferOverflowException e)
             {
-                await BinaryReaderWriter.ReadExactly(count, fromStream, intoBuffer, cancellationToken);
+                throw new InternalBufferOverflowException($"Supplied buffer too small to read {0} bytes from {Enum.GetName(typeof(WebSocketOpCode), opCode)} frame", e);
             }
 
             if (opCode == WebSocketOpCode.ConnectionClose)

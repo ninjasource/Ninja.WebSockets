@@ -20,7 +20,7 @@ namespace WebSockets.DemoClient.Complex
         WebSocket _webSocket;
         CancellationToken _token;
         byte[][] _expectedValues;
-        private readonly IWebSocketClientFactory _clientFactory;
+        private readonly IWebSocketClientFactory _clientFactory;        
 
         public StressTest(int seed, Uri uri, int numItems, int minNumBytesPerMessage, int maxNumBytesPerMessage)
         {
@@ -87,7 +87,10 @@ namespace WebSockets.DemoClient.Complex
 
         private async Task ReceiveLoop()
         {
-            var recArray = new byte[_maxNumBytesPerMessage];
+            // the recArray should be large enough to at least receive control frames like Ping and Close frames (with payload)
+            const int MIN_BUFFER_SIZE = 510;
+            int size = _maxNumBytesPerMessage < MIN_BUFFER_SIZE ? MIN_BUFFER_SIZE : _maxNumBytesPerMessage;
+            var recArray = new byte[size];
             var recBuffer = new ArraySegment<byte>(recArray);
 
             int i = 0;
