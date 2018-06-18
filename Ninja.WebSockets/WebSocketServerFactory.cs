@@ -104,7 +104,7 @@ namespace Ninja.WebSockets
 
         private static void CheckWebSocketVersion(string httpHeader)
         {
-            Regex webSocketVersionRegex = new Regex("Sec-WebSocket-Version: (.*)");
+            Regex webSocketVersionRegex = new Regex("Sec-WebSocket-Version: (.*)", RegexOptions.IgnoreCase);
 
             // check the version. Support version 13 and above
             const int WebSocketVersion = 13;
@@ -127,7 +127,7 @@ namespace Ninja.WebSockets
         {
             try
             {
-                Regex webSocketKeyRegex = new Regex("Sec-WebSocket-Key: (.*)");
+                Regex webSocketKeyRegex = new Regex("Sec-WebSocket-Key: (.*)", RegexOptions.IgnoreCase);
                 CheckWebSocketVersion(httpHeader);
 
                 Match match = webSocketKeyRegex.Match(httpHeader);

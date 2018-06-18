@@ -148,8 +148,8 @@ namespace Ninja.WebSockets
         private void ThrowIfInvalidAcceptString(Guid guid, string response, string secWebSocketKey)
         {
             // make sure we escape the accept string which could contain special regex characters
-            string regexPattern = "Sec-WebSocket-Accept: (.*)";
-            Regex regex = new Regex(regexPattern);
+            string regexPattern = "Sec-WebSocket-Accept: (.*)";            
+            Regex regex = new Regex(regexPattern, RegexOptions.IgnoreCase);
             string actualAcceptString = regex.Match(response).Groups[1].Value.Trim();
 
             // check the accept string
