@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using Ninja.WebSockets;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -27,8 +28,8 @@ namespace WebSockets.DemoServer
             try
             {
                 int port = 27416;
-
-                using (WebServer server = new WebServer(_webSocketServerFactory, _loggerFactory))
+                IList<string> supportedSubProtocols = new string[] { "chatV1", "chatV2", "chatV3" };
+                using (WebServer server = new WebServer(_webSocketServerFactory, _loggerFactory, supportedSubProtocols))
                 {
                     await server.Listen(port);
                     _logger.LogInformation($"Listening on port {port}");

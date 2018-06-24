@@ -142,7 +142,22 @@ namespace Ninja.WebSockets
 
             ThrowIfInvalidResponseCode(response);
             ThrowIfInvalidAcceptString(guid, response, secWebSocketKey);
-            return new WebSocketImplementation(guid, _bufferFactory, responseStream, keepAliveInterval, secWebSocketExtensions, includeExceptionInCloseResponse, isClient: true);
+            string subProtocol = GetSubProtocolFromHeader(response);
+            return new WebSocketImplementation(guid, _bufferFactory, responseStream, keepAliveInterval, secWebSocketExtensions, includeExceptionInCloseResponse, true, subProtocol);
+        }
+
+        private string GetSubProtocolFromHeader(string response)
+        {
+            // make sure we escape the accept string which could contain special regex characters
+            string regexPattern = "Sec-WebSocket-Protocol: (.*)";
+            Regex regex = new Regex(regexPattern, RegexOptions.IgnoreCase);
+            Match match = regex.Match(response);
+            if (match.Success)
+            {
+                return match.Groups[1].Value.Trim();
+            }
+
+            return null;            
         }
 
         private void ThrowIfInvalidAcceptString(Guid guid, string response, string secWebSocketKey)
@@ -260,6 +275,7 @@ namespace Ninja.WebSockets
                                            "Connection: Upgrade\r\n" +
                                           $"Sec-WebSocket-Key: {secWebSocketKey}\r\n" +
                                           $"Origin: http://{uri.Host}:{uri.Port}\r\n" +
+                                          $"Sec-WebSocket-Protocol: {options.SecWebSocketProtocol}\r\n" +
                                           additionalHeaders +
                                            "Sec-WebSocket-Version: 13\r\n\r\n";
 

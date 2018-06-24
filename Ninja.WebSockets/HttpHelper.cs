@@ -21,6 +21,7 @@
 // ---------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
@@ -29,12 +30,13 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Ninja.WebSockets.Exceptions;
+using System.Linq;
 
 namespace Ninja.WebSockets
 {
     public class HttpHelper
     {
-        private const string _HTTP_GET_HEADER_REGEX = @"^GET(.*)HTTP\/1\.1";
+        private const string HTTP_GET_HEADER_REGEX = @"^GET(.*)HTTP\/1\.1";
 
         /// <summary>
         /// Calculates a random WebSocket key that can be used to initiate a WebSocket handshake
@@ -109,7 +111,7 @@ namespace Ninja.WebSockets
         /// <returns>True if this is an http WebSocket upgrade response</returns>
         public static bool IsWebSocketUpgradeRequest(String header)
         {
-            Regex getRegex = new Regex(_HTTP_GET_HEADER_REGEX, RegexOptions.IgnoreCase);
+            Regex getRegex = new Regex(HTTP_GET_HEADER_REGEX, RegexOptions.IgnoreCase);
             Match getRegexMatch = getRegex.Match(header);
 
             if (getRegexMatch.Success)
@@ -130,7 +132,7 @@ namespace Ninja.WebSockets
         /// <returns>The path</returns>
         public static string GetPathFromHeader(string httpHeader)
         {
-            Regex getRegex = new Regex(_HTTP_GET_HEADER_REGEX, RegexOptions.IgnoreCase);
+            Regex getRegex = new Regex(HTTP_GET_HEADER_REGEX, RegexOptions.IgnoreCase);
             Match getRegexMatch = getRegex.Match(httpHeader);
 
             if (getRegexMatch.Success)
@@ -140,6 +142,29 @@ namespace Ninja.WebSockets
             }
 
             return null;
+        }
+
+        public static IList<string> GetSubProtocols(string httpHeader)
+        {
+            Regex regex = new Regex(@"Sec-WebSocket-Protocol:(?<protocols>.+)", RegexOptions.IgnoreCase);
+            Match match = regex.Match(httpHeader);
+
+            if (match.Success)
+            {
+                const int MAX_LEN = 2048;
+                if (match.Length > MAX_LEN)
+                {
+                    throw new EntityTooLargeException($"Sec-WebSocket-Protocol exceeded the maximum of length of {MAX_LEN}");
+                }
+
+                // extract a csv list of sub protocols (in order of highest preference first)
+                string csv = match.Groups["protocols"].Value.Trim();
+                return csv.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                    .Select(x => x.Trim())
+                    .ToList();
+            }
+
+            return new List<string>();
         }
 
         /// <summary>

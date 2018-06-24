@@ -18,8 +18,8 @@ namespace Ninja.WebSockets.UnitTests
         {
             Func<MemoryStream> memoryStreamFactory = () => new MemoryStream();
             var theInternet = new TheInternet();
-            var webSocketClient = new WebSocketImplementation(Guid.NewGuid(), memoryStreamFactory, theInternet.ClientNetworkStream, TimeSpan.Zero, null, false, true);
-            var webSocketServer = new WebSocketImplementation(Guid.NewGuid(), memoryStreamFactory, theInternet.ServerNetworkStream, TimeSpan.Zero, null, false, false);
+            var webSocketClient = new WebSocketImplementation(Guid.NewGuid(), memoryStreamFactory, theInternet.ClientNetworkStream, TimeSpan.Zero, null, false, true, null);
+            var webSocketServer = new WebSocketImplementation(Guid.NewGuid(), memoryStreamFactory, theInternet.ServerNetworkStream, TimeSpan.Zero, null, false, false, null);
             CancellationTokenSource tokenSource = new CancellationTokenSource();
             ArraySegment<byte> buffer = new ArraySegment<byte>(new byte[10]);
 
@@ -33,7 +33,7 @@ namespace Ninja.WebSockets.UnitTests
         {
             Func<MemoryStream> memoryStreamFactory = () => new MemoryStream();
             var theInternet = new TheInternet();
-            var webSocketClient = new WebSocketImplementation(Guid.NewGuid(), memoryStreamFactory, theInternet.ClientNetworkStream, TimeSpan.Zero, null, false, true);
+            var webSocketClient = new WebSocketImplementation(Guid.NewGuid(), memoryStreamFactory, theInternet.ClientNetworkStream, TimeSpan.Zero, null, false, true, null);
             CancellationTokenSource tokenSource = new CancellationTokenSource();
             ArraySegment<byte> buffer = new ArraySegment<byte>(new byte[10]);
 
@@ -47,8 +47,8 @@ namespace Ninja.WebSockets.UnitTests
         {
             Func<MemoryStream> memoryStreamFactory = () => new MemoryStream();
             var theInternet = new TheInternet();
-            var webSocketClient = new WebSocketImplementation(Guid.NewGuid(), memoryStreamFactory, theInternet.ClientNetworkStream, TimeSpan.Zero, null, false, true);
-            var webSocketServer = new WebSocketImplementation(Guid.NewGuid(), memoryStreamFactory, theInternet.ServerNetworkStream, TimeSpan.Zero, null, false, false);
+            var webSocketClient = new WebSocketImplementation(Guid.NewGuid(), memoryStreamFactory, theInternet.ClientNetworkStream, TimeSpan.Zero, null, false, true, null);
+            var webSocketServer = new WebSocketImplementation(Guid.NewGuid(), memoryStreamFactory, theInternet.ServerNetworkStream, TimeSpan.Zero, null, false, false, null);
             CancellationTokenSource tokenSource = new CancellationTokenSource();
 
             var clientReceiveTask = Task.Run<string[]>(() => ReceiveClient(webSocketClient, tokenSource.Token));
@@ -80,8 +80,8 @@ namespace Ninja.WebSockets.UnitTests
                 Task serverConnectTask = serverPipe.WaitForConnectionAsync();
                 Task.WaitAll(clientConnectTask, serverConnectTask);
 
-                var webSocketClient = new WebSocketImplementation(Guid.NewGuid(), memoryStreamFactory, clientPipe, TimeSpan.Zero, null, false, true);
-                var webSocketServer = new WebSocketImplementation(Guid.NewGuid(), memoryStreamFactory, serverPipe, TimeSpan.Zero, null, false, false);
+                var webSocketClient = new WebSocketImplementation(Guid.NewGuid(), memoryStreamFactory, clientPipe, TimeSpan.Zero, null, false, true, null);
+                var webSocketServer = new WebSocketImplementation(Guid.NewGuid(), memoryStreamFactory, serverPipe, TimeSpan.Zero, null, false, false, null);
                 CancellationTokenSource tokenSource = new CancellationTokenSource();
 
                 var clientReceiveTask = Task.Run<string[]>(() => ReceiveClient(webSocketClient, tokenSource.Token));

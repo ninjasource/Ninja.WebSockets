@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System.Collections.Generic;
+using System.IO;
 
 namespace Ninja.WebSockets
 {
@@ -11,6 +12,8 @@ namespace Ninja.WebSockets
         /// True if this is a valid WebSocket request
         /// </summary>
         public bool IsWebSocketRequest { get; private set; }
+
+        public IList<string> WebSocketRequestedProtocols { get; private set; }
 
         /// <summary>
         /// The raw http header extracted from the stream
@@ -34,9 +37,10 @@ namespace Ninja.WebSockets
         /// <param name="httpHeader">The raw http header extracted from the stream</param>
         /// <param name="path">The Path extracted from the http header</param>
         /// <param name="stream">The stream AFTER the header has already been read</param>
-        public WebSocketHttpContext(bool isWebSocketRequest, string httpHeader, string path, Stream stream)
+        public WebSocketHttpContext(bool isWebSocketRequest, IList<string> webSocketRequestedProtocols, string httpHeader, string path, Stream stream)
         {
             IsWebSocketRequest = isWebSocketRequest;
+            WebSocketRequestedProtocols = webSocketRequestedProtocols;
             HttpHeader = httpHeader;
             Path = path;
             Stream = stream;

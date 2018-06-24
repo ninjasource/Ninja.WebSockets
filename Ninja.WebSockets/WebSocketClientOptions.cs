@@ -45,6 +45,13 @@ namespace Ninja.WebSockets
         public string SecWebSocketExtensions { get; set; }
 
         /// <summary>
+        /// A comma separated list of sub protocols in preference order (first one being the most preferred)
+        /// The server will return the first supported sub protocol (or none if none are supported)
+        /// Can be null
+        /// </summary>
+        public string SecWebSocketProtocol { get; set; }
+
+        /// <summary>
         /// Initialises a new instance of the WebSocketClientOptions class
         /// </summary>
         public WebSocketClientOptions()
@@ -53,6 +60,7 @@ namespace Ninja.WebSockets
             NoDelay = true;
             AdditionalHttpHeaders = new Dictionary<string, string>();
             IncludeExceptionInCloseResponse = false;
+            SecWebSocketProtocol = null;
         }
     }
 }

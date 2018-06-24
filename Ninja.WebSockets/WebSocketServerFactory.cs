@@ -21,6 +21,7 @@
 // ---------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net.WebSockets;
 using System.Text.RegularExpressions;
@@ -69,7 +70,8 @@ namespace Ninja.WebSockets
             string header = await HttpHelper.ReadHttpHeaderAsync(stream, token);
             string path = HttpHelper.GetPathFromHeader(header);
             bool isWebSocketRequest = HttpHelper.IsWebSocketUpgradeRequest(header);
-            return new WebSocketHttpContext(isWebSocketRequest, header, path, stream);
+            IList<string> subProtocols = HttpHelper.GetSubProtocols(header);
+            return new WebSocketHttpContext(isWebSocketRequest, subProtocols, header, path, stream);
         }
 
         /// <summary>
@@ -96,10 +98,10 @@ namespace Ninja.WebSockets
         {
             Guid guid = Guid.NewGuid();
             Events.Log.AcceptWebSocketStarted(guid);
-            await PerformHandshakeAsync(guid, context.HttpHeader, context.Stream, token);
+            await PerformHandshakeAsync(guid, context.HttpHeader, options.SubProtocol, context.Stream, token);
             Events.Log.ServerHandshakeSuccess(guid);
             string secWebSocketExtensions = null;
-            return new WebSocketImplementation(guid, _bufferFactory, context.Stream, options.KeepAliveInterval, secWebSocketExtensions, options.IncludeExceptionInCloseResponse, isClient: false);
+            return new WebSocketImplementation(guid, _bufferFactory, context.Stream, options.KeepAliveInterval, secWebSocketExtensions, options.IncludeExceptionInCloseResponse, false, options.SubProtocol);
         }
 
         private static void CheckWebSocketVersion(string httpHeader)
@@ -123,7 +125,7 @@ namespace Ninja.WebSockets
             }
         }
 
-        private static async Task PerformHandshakeAsync(Guid guid, String httpHeader, Stream stream, CancellationToken token)
+        private static async Task PerformHandshakeAsync(Guid guid, String httpHeader, string subProtocol, Stream stream, CancellationToken token)
         {
             try
             {
@@ -138,8 +140,8 @@ namespace Ninja.WebSockets
                     string response = ("HTTP/1.1 101 Switching Protocols\r\n"
                                        + "Connection: Upgrade\r\n"
                                        + "Upgrade: websocket\r\n"
-                                       + "Sec-WebSocket-Protocol: \r\n"
-                                       + "Sec-WebSocket-Accept: " + setWebSocketAccept);
+                                       + $"Sec-WebSocket-Protocol: {subProtocol}\r\n"
+                                       + $"Sec-WebSocket-Accept: {setWebSocketAccept}");
 
                     Events.Log.SendingHandshakeResponse(guid, response);
                     await HttpHelper.WriteHttpHeaderAsync(response, stream, token);

@@ -43,6 +43,7 @@ namespace Ninja.WebSockets.Internal
         private readonly Stream _stream;
         private readonly bool _includeExceptionInCloseResponse;
         private readonly bool _isClient;
+        private readonly string _subProtocol;
         private CancellationTokenSource _internalReadCts;
         private WebSocketState _state;
         private readonly IPingPongManager _pingPongManager;
@@ -56,12 +57,13 @@ namespace Ninja.WebSockets.Internal
 
         public event EventHandler<PongEventArgs> Pong;
         
-        internal WebSocketImplementation(Guid guid, Func<MemoryStream> recycledStreamFactory, Stream stream, TimeSpan keepAliveInterval, string secWebSocketExtensions, bool includeExceptionInCloseResponse, bool isClient)
+        internal WebSocketImplementation(Guid guid, Func<MemoryStream> recycledStreamFactory, Stream stream, TimeSpan keepAliveInterval, string secWebSocketExtensions, bool includeExceptionInCloseResponse, bool isClient, string subProtocol)
         {
             _guid = guid;
             _recycledStreamFactory = recycledStreamFactory;
             _stream = stream;
             _isClient = isClient;
+            _subProtocol = subProtocol;
             _internalReadCts = new CancellationTokenSource();
             _state = WebSocketState.Open;
 
@@ -98,7 +100,7 @@ namespace Ninja.WebSockets.Internal
 
         public override WebSocketState State { get { return _state; } }
 
-        public override string SubProtocol => null;
+        public override string SubProtocol => _subProtocol;
 
         public TimeSpan KeepAliveInterval { get; private set; }
         

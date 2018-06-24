@@ -25,12 +25,21 @@ namespace Ninja.WebSockets
         public bool IncludeExceptionInCloseResponse { get; set; }
 
         /// <summary>
+        /// Specifies the sub protocol to send back to the client in the opening handshake
+        /// Can be null (the most common use case)
+        /// The client can specify multiple preferred protocols in the opening handshake header
+        /// The server should use the first supported one or set this to null if none of the requested sub protocols are supported
+        /// </summary>
+        public string SubProtocol { get; set; }
+
+        /// <summary>
         /// Initialises a new instance of the WebSocketServerOptions class
         /// </summary>
         public WebSocketServerOptions()
         {
             KeepAliveInterval = TimeSpan.FromSeconds(60);
             IncludeExceptionInCloseResponse = false;
+            SubProtocol = null;
         }
     }
 }

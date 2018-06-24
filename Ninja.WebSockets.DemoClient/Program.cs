@@ -16,6 +16,7 @@ namespace WebSockets.DemoClient
             }
             else if (args.Length == 5)
             {
+                // TODO: allow buffer pool to grow its buffers
                 // ws://localhost:27416/echo 5 1000 5000 40000
                 RunComplexTest(args).Wait();
             }

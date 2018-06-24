@@ -35,7 +35,7 @@ namespace WebSockets.DemoClient.Complex
         public async Task Run()
         {
             
-            WebSocketClientOptions options = new WebSocketClientOptions() { NoDelay = true, KeepAliveInterval = TimeSpan.Zero };
+            WebSocketClientOptions options = new WebSocketClientOptions() { NoDelay = true, KeepAliveInterval = TimeSpan.Zero, SecWebSocketProtocol = "chatV2, chatV1" };
             using (_webSocket = await _clientFactory.ConnectAsync(_uri, options))
             {
                 var source = new CancellationTokenSource();

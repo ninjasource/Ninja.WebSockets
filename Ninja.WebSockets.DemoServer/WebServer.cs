@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using System.Threading;
 using Ninja.WebSockets;
+using System.Collections.Generic;
 
 namespace WebSockets.DemoServer
 {
@@ -17,17 +18,40 @@ namespace WebSockets.DemoServer
         ILogger _logger;
         private readonly IWebSocketServerFactory _webSocketServerFactory;
         private readonly ILoggerFactory _loggerFactory;
+        private readonly HashSet<string> _supportedSubProtocols;
 
-        public WebServer(IWebSocketServerFactory webSocketServerFactory, ILoggerFactory loggerFactory)
+        public WebServer(IWebSocketServerFactory webSocketServerFactory, ILoggerFactory loggerFactory, IList<string> supportedSubProtocols = null)
         {
             _logger = loggerFactory.CreateLogger<WebServer>();
             _webSocketServerFactory = webSocketServerFactory;
             _loggerFactory = loggerFactory;
+            _supportedSubProtocols = new HashSet<string>(supportedSubProtocols ?? new string[0]);
         }
 
         private void ProcessTcpClient(TcpClient tcpClient)
         {
             Task.Run(() => ProcessTcpClientAsync(tcpClient));
+        }
+
+        private string GetSubProtocol(IList<string> requestedSubProtocols)
+        {
+            foreach (string subProtocol in requestedSubProtocols)
+            {
+                // match the first sub protocol that we support (the client should pass the most preferable sub protocols first)
+                if (_supportedSubProtocols.Contains(subProtocol))
+                {
+                    _logger.LogInformation($"Http header has requested sub protocol {subProtocol} which is supported");
+
+                    return subProtocol;
+                }
+            }
+
+            if (requestedSubProtocols.Count > 0)
+            {
+                _logger.LogWarning($"Http header has requested the following sub protocols: {string.Join(", ", requestedSubProtocols)}. There are no supported protocols configured that match.");
+            }
+
+            return null;
         }
 
         private async Task ProcessTcpClientAsync(TcpClient tcpClient)
@@ -52,8 +76,10 @@ namespace WebSockets.DemoServer
                 WebSocketHttpContext context = await _webSocketServerFactory.ReadHttpHeaderFromStreamAsync(stream);
                 if (context.IsWebSocketRequest)
                 {
-                    var options = new WebSocketServerOptions() { KeepAliveInterval = TimeSpan.FromSeconds(30) };
+                    string subProtocol = GetSubProtocol(context.WebSocketRequestedProtocols);
+                    var options = new WebSocketServerOptions() { KeepAliveInterval = TimeSpan.FromSeconds(30), SubProtocol = subProtocol };
                     _logger.LogInformation("Http header has requested an upgrade to Web Socket protocol. Negotiating Web Socket handshake");
+
                     WebSocket webSocket = await _webSocketServerFactory.AcceptWebSocketAsync(context, options);
 
                     _logger.LogInformation("Web Socket handshake response sent. Stream ready.");

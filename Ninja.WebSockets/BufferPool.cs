@@ -13,7 +13,7 @@ namespace Ninja.WebSockets
     /// </summary>
     public class BufferPool : IBufferPool
     {
-        const int DEFAULT_BUFFER_SIZE = 16384;
+        const int DEFAULT_BUFFER_SIZE = 65536;
         private readonly ConcurrentStack<byte[]> _bufferPoolStack;
         private readonly int _bufferSize;
 
