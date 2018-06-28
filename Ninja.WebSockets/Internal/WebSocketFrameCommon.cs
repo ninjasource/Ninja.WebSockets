@@ -44,12 +44,17 @@ namespace Ninja.WebSockets.Internal
 
             byte[] buffer = payload.Array;
             byte[] maskKeyArray = maskKey.Array;
+            int payloadOffset = payload.Offset;
+            int payloadCount = payload.Count;
+            int maskKeyOffset = maskKey.Offset;
 
             // apply the mask key (this is a reversible process so no need to copy the payload)
-            for (int i = payload.Offset; i < payload.Count; i++)
+            // NOTE: this is a hot function
+            // TODO: make this faster
+            for (int i = payloadOffset; i < payloadCount; i++)
             {
-                int payloadIndex = i - payload.Offset; // index should start at zero
-                int maskKeyIndex = maskKey.Offset + (payloadIndex % MaskKeyLength);
+                int payloadIndex = i - payloadOffset; // index should start at zero
+                int maskKeyIndex = maskKeyOffset + (payloadIndex % MaskKeyLength);
                 buffer[i] = (Byte)(buffer[i] ^ maskKeyArray[maskKeyIndex]);
             }
         }
