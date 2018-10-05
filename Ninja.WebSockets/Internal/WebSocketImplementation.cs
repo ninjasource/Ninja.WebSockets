@@ -29,7 +29,12 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-[assembly: InternalsVisibleTo("Ninja.WebSockets.UnitTests")]
+[assembly: InternalsVisibleTo("Ninja.WebSockets.UnitTests, PublicKey="+
+    "00240000048000009400000006020000002400005253413100040000010001002d8cb2601f0037"+
+    "e08abeeedf2a651a422e937eb1a2bfeacf789e07a235260b16e982d3f62bc173dbdb40dc4a5cd7"+
+    "5395b2655ff261fa69bd7ce1bfd4293f2d31fbe18dba0590f23e48141ebff8c578259e81082290"+
+    "d63cb3b41a8d4dfd2177d4d8ba8d98cceded4edd2f17700327c6dd053af08092e2086f711961a2"+
+    "edb2bdb9")]
 
 namespace Ninja.WebSockets.Internal
 {
