@@ -18,6 +18,9 @@ A WebSocket library that allows you to make WebSocket connections as a client or
     <PackageTags>WebSockets, Web Sockets, WebSocket, Web Socket, .netstandard,</PackageTags>
     <AssemblyVersion>1.0.1.2</AssemblyVersion>
     <FileVersion>1.0.1.2</FileVersion>
+    <SignAssembly>true</SignAssembly>
+    <DelaySign>false</DelaySign>
+    <AssemblyOriginatorKeyFile>Ninja.WebSockets.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 
 </Project>
