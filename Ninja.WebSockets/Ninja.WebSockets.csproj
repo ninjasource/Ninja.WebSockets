@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;net45</TargetFrameworks>
-    <Version>1.1.2</Version>
+    <Version>1.1.3</Version>
     <Authors>David Haig</Authors>
     <Company>David Haig</Company>
     <Copyright>David Haig</Copyright>
@@ -13,11 +13,23 @@
     <Description>A concrete implementation of the .Net Standard 2.0 System.Net.WebSockets.WebSocket abstract class
 
 A WebSocket library that allows you to make WebSocket connections as a client or to respond to WebSocket requests as a server. You can safely pass around a general purpose WebSocket instance throughout your codebase without tying yourself strongly to this library. This is the same WebSocket abstract class used by .net core 2.0 and it allows for asynchronous Websocket communication for improved performance and scalability.</Description>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <PackageReleaseNotes>Fixed issue with Sec-WebSocket-Protocol for chrome</PackageReleaseNotes>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <PackageReleaseNotes>Signed assembly</PackageReleaseNotes>
     <PackageTags>WebSockets, Web Sockets, WebSocket, Web Socket, .netstandard,</PackageTags>
-    <AssemblyVersion>1.0.1.2</AssemblyVersion>
-    <FileVersion>1.0.1.2</FileVersion>
+    <AssemblyVersion>1.0.1.3</AssemblyVersion>
+    <FileVersion>1.0.1.3</FileVersion>
+    <SignAssembly>false</SignAssembly>
+    <AssemblyOriginatorKeyFile>Ninja.WebSockets.pfx</AssemblyOriginatorKeyFile>
+    <Configurations>Debug;Release;ReleaseSigned</Configurations>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netstandard2.0|AnyCPU'">
+    <DefineConstants>TRACE</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='ReleaseSigned|netstandard2.0|AnyCPU'">
+    <DefineConstants>TRACE;RELEASESIGNED</DefineConstants>
+    <Optimize>true</Optimize>
   </PropertyGroup>
 
 </Project>

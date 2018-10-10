@@ -1,5 +1,5 @@
 ﻿// ---------------------------------------------------------------------
-// Copyright 2017 David Haig
+// Copyright 2018 David Haig
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy 
 // of this software and associated documentation files (the "Software"), to deal 
@@ -29,7 +29,11 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
+#if RELEASESIGNED
+[assembly: InternalsVisibleTo("Ninja.WebSockets.UnitTests, PublicKey=0024000004800000940000000602000000240000525341310004000001000100b1707056f4761b7846ed503642fcde97fc350c939f78026211304a56ba51e094c9cefde77fadce5b83c0a621c17f032c37c520b6d9ab2da8291a21472175d9caad55bf67bab4bffb46a96f864ea441cf695edc854296e02a44062245a4e09ccd9a77ef6146ecf941ce1d9da078add54bc2d4008decdac2fa2b388e17794ee6a6")]
+#else
 [assembly: InternalsVisibleTo("Ninja.WebSockets.UnitTests")]
+#endif
 
 namespace Ninja.WebSockets.Internal
 {
