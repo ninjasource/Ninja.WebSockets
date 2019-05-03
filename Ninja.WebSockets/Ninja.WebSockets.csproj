@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;net45</TargetFrameworks>
-    <Version>1.1.3</Version>
+    <Version>1.1.4</Version>
     <Authors>David Haig</Authors>
     <Company>David Haig</Company>
     <Copyright>David Haig</Copyright>
@@ -12,12 +12,17 @@
     <PackageProjectUrl>https://github.com/ninjasource/Ninja.WebSockets</PackageProjectUrl>
     <Description>A concrete implementation of the .Net Standard 2.0 System.Net.WebSockets.WebSocket abstract class
 
+Can target .NET 4.5 (or above) or .NET Standard 2.0 (or above)
+Works on any version of Windows (including Windows 7) as well as Linux as it does not use HTTP.sys.
+
 A WebSocket library that allows you to make WebSocket connections as a client or to respond to WebSocket requests as a server. You can safely pass around a general purpose WebSocket instance throughout your codebase without tying yourself strongly to this library. This is the same WebSocket abstract class used by .net core 2.0 and it allows for asynchronous Websocket communication for improved performance and scalability.</Description>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
-    <PackageReleaseNotes>Signed assembly</PackageReleaseNotes>
+    <PackageReleaseNotes>Enabled Ping messages from Client by default
+Fixed potential race condition with sending a Ping message and a large frame simultaneously
+Fixed issue with BufferPool failing to allocate very large buffers</PackageReleaseNotes>
     <PackageTags>WebSockets, Web Sockets, WebSocket, Web Socket, .netstandard,</PackageTags>
-    <AssemblyVersion>1.0.1.3</AssemblyVersion>
-    <FileVersion>1.0.1.3</FileVersion>
+    <AssemblyVersion>1.0.1.4</AssemblyVersion>
+    <FileVersion>1.0.1.4</FileVersion>
     <SignAssembly>false</SignAssembly>
     <AssemblyOriginatorKeyFile>Ninja.WebSockets.pfx</AssemblyOriginatorKeyFile>
     <Configurations>Debug;Release;ReleaseSigned</Configurations>
