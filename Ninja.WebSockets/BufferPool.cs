@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Ninja.WebSockets.Exceptions;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
@@ -121,14 +122,28 @@ namespace Ninja.WebSockets
                     int position = (int)_ms.Position;
 
                     // double the buffer size
-                    int newSize = _buffer.Length * 2;
+                    long newSize = (long)_buffer.Length * 2;
 
                     // make sure the new size is big enough
-                    int requiredSize = count + _buffer.Length - position;
+                    long requiredSize = (long)count + _buffer.Length - position;
+
+                    if (requiredSize > int.MaxValue)
+                    {
+                        throw new WebSocketBufferOverflowException($"Tried to create a buffer ({requiredSize:#,##0} bytes) that was larger than the max allowed size ({int.MaxValue:#,##0})");
+                    }
+
                     if (requiredSize > newSize)
                     {
                         // compute the power of two larger than requiredSize. so 40000 => 65536
-                        newSize = (int)Math.Pow(2, Math.Ceiling(Math.Log(requiredSize) / Math.Log(2))); ;
+                        long candidateSize = (long)Math.Pow(2, Math.Ceiling(Math.Log(requiredSize) / Math.Log(2)));
+                        if (candidateSize > int.MaxValue)
+                        {
+                            newSize = requiredSize;
+                        }
+                        else
+                        {
+                            newSize = candidateSize;
+                        }
                     }
 
                     var newBuffer = new byte[newSize];

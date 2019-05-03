@@ -56,7 +56,7 @@ namespace Ninja.WebSockets
         /// </summary>
         public WebSocketClientOptions()
         {
-            KeepAliveInterval = TimeSpan.Zero;
+            KeepAliveInterval = TimeSpan.FromSeconds(20);
             NoDelay = true;
             AdditionalHttpHeaders = new Dictionary<string, string>();
             IncludeExceptionInCloseResponse = false;

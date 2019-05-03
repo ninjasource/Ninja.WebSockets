@@ -34,8 +34,9 @@ namespace WebSockets.DemoClient.Complex
 
         public async Task Run()
         {
-            
-            WebSocketClientOptions options = new WebSocketClientOptions() { NoDelay = true, KeepAliveInterval = TimeSpan.Zero, SecWebSocketProtocol = "chatV2, chatV1" };
+            // NOTE: if the service is so busy that it cannot respond to a PING within the KeepAliveInterval interval the websocket connection will be closed
+            // To run extreme tests it is best to set the KeepAliveInterval to TimeSpan.Zero to disable ping pong
+            WebSocketClientOptions options = new WebSocketClientOptions() { NoDelay = true, KeepAliveInterval = TimeSpan.FromSeconds(2), SecWebSocketProtocol = "chatV2, chatV1" };
             using (_webSocket = await _clientFactory.ConnectAsync(_uri, options))
             {
                 var source = new CancellationTokenSource();

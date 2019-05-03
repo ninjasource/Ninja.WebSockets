@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Ninja.WebSockets.DemoClient.Complex;
+using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using WebSockets.DemoClient.Complex;
@@ -26,9 +27,12 @@ namespace WebSockets.DemoClient
                 Console.WriteLine($"Complex Test: uri numThreads numItemsPerThread minNumBytesPerMessage maxNumBytesPerMessage");
                 Console.WriteLine("e.g: ws://localhost:27416/chat/echo 5 100 4 4");
             }
+        }
 
-            Console.WriteLine("Press Enter to quit");
-            Console.ReadLine();
+        private static async Task RunLoadTest()
+        {
+            var client = new LoadTest();
+            await client.Run();
         }
 
         private static async Task RunComplexTest(string[] args)
@@ -47,7 +51,7 @@ namespace WebSockets.DemoClient
 
         private static async Task RunSimpleTest()
         {
-            SimpleClient client = new SimpleClient();
+            var client = new SimpleClient();
             await client.Run();
         }
     }

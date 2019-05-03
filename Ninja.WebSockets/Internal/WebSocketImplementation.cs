@@ -58,6 +58,7 @@ namespace Ninja.WebSockets.Internal
         const int MAX_PING_PONG_PAYLOAD_LEN = 125;
         private WebSocketCloseStatus? _closeStatus;
         private string _closeStatusDescription;
+        private readonly SemaphoreSlim _semaphore = new SemaphoreSlim(1);
 
         public event EventHandler<PongEventArgs> Pong;
         
@@ -516,7 +517,15 @@ namespace Ninja.WebSockets.Internal
         private async Task WriteStreamToNetwork(MemoryStream stream, CancellationToken cancellationToken)
         {
             ArraySegment<byte> buffer = GetBuffer(stream);
-            await _stream.WriteAsync(buffer.Array, buffer.Offset, buffer.Count, cancellationToken).ConfigureAwait(false);
+            await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+            try
+            {
+                await _stream.WriteAsync(buffer.Array, buffer.Offset, buffer.Count, cancellationToken).ConfigureAwait(false);
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
         }
 
         /// <summary>

@@ -25,7 +25,7 @@ namespace Ninja.WebSockets.UnitTests
 
             tokenSource.Cancel();
 
-            await Assert.ThrowsAsync<OperationCanceledException>(() => webSocketClient.ReceiveAsync(buffer, tokenSource.Token));
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => webSocketClient.ReceiveAsync(buffer, tokenSource.Token));
         }
 
         [Fact]
@@ -39,7 +39,7 @@ namespace Ninja.WebSockets.UnitTests
 
             tokenSource.Cancel();
 
-            await Assert.ThrowsAsync<OperationCanceledException>(() => webSocketClient.SendAsync(buffer, WebSocketMessageType.Binary, true, tokenSource.Token));
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => webSocketClient.SendAsync(buffer, WebSocketMessageType.Binary, true, tokenSource.Token));
         }
 
         [Fact]

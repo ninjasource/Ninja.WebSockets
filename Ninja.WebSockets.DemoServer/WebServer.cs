@@ -19,6 +19,8 @@ namespace WebSockets.DemoServer
         private readonly IWebSocketServerFactory _webSocketServerFactory;
         private readonly ILoggerFactory _loggerFactory;
         private readonly HashSet<string> _supportedSubProtocols;
+        // const int BUFFER_SIZE = 1 * 1024 * 1024 * 1024; // 1GB
+        const int BUFFER_SIZE = 4 * 1024 * 1024; // 4MB
 
         public WebServer(IWebSocketServerFactory webSocketServerFactory, ILoggerFactory loggerFactory, IList<string> supportedSubProtocols = null)
         {
@@ -117,8 +119,7 @@ namespace WebSockets.DemoServer
 
         public async Task RespondToWebSocketRequestAsync(WebSocket webSocket, CancellationToken token)
         {
-            const int bufferLen = 4 * 1024 * 1024; // 4MB
-            ArraySegment<byte> buffer = new ArraySegment<byte>(new byte[bufferLen]);
+            ArraySegment<byte> buffer = new ArraySegment<byte>(new byte[BUFFER_SIZE]);
 
             while (true)
             {
@@ -129,10 +130,10 @@ namespace WebSockets.DemoServer
                     break;
                 }
 
-                if (result.Count > bufferLen)
+                if (result.Count > BUFFER_SIZE)
                 {
                     await webSocket.CloseAsync(WebSocketCloseStatus.MessageTooBig,
-                        $"Web socket frame cannot exceed buffer size of {bufferLen:#,##0} bytes. Send multiple frames instead.",
+                        $"Web socket frame cannot exceed buffer size of {BUFFER_SIZE:#,##0} bytes. Send multiple frames instead.",
                         token);
                     break;
                 }
