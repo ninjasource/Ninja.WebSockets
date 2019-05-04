@@ -11,6 +11,7 @@ using Xunit;
 
 namespace Ninja.WebSockets.UnitTests
 {
+    // Thanks Esbjörn for adding this unit test!!
     public class LargeMessageTests
     {
         private class Server : IDisposable
