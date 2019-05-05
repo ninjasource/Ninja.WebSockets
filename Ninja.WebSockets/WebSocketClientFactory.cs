@@ -27,6 +27,7 @@ using System.Net;
 using System.Net.Security;
 using System.Net.Sockets;
 using System.Net.WebSockets;
+using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -86,24 +87,9 @@ namespace Ninja.WebSockets
             Guid guid = Guid.NewGuid();
             string host = uri.Host;
             int port = uri.Port;
-            var tcpClient = new TcpClient();
-            tcpClient.NoDelay = options.NoDelay;
             string uriScheme = uri.Scheme.ToLower();
             bool useSsl = uriScheme == "wss" || uriScheme == "https";
-            IPAddress ipAddress;
-            if (IPAddress.TryParse(host, out ipAddress))
-            {
-                Events.Log.ClientConnectingToIpAddress(guid, ipAddress.ToString(), port);
-                await tcpClient.ConnectAsync(ipAddress, port);
-            }
-            else
-            {
-                Events.Log.ClientConnectingToHost(guid, host, port);
-                await tcpClient.ConnectAsync(host, port);
-            }
-
-            token.ThrowIfCancellationRequested();
-            Stream stream = GetStream(guid, tcpClient, useSsl, host);
+            Stream stream = await GetStream(guid, useSsl, options.NoDelay, host, port, token);
             return await PerformHandshake(guid, uri, stream, options, token);
         }
 
@@ -206,23 +192,56 @@ namespace Ninja.WebSockets
             }
         }
 
-        private Stream GetStream(Guid guid, TcpClient tcpClient, bool isSecure, string host)
+        /// <summary>
+        /// Override this if you need more fine grained control over the TLS handshake like setting the SslProtocol or adding a client certificate
+        /// </summary>
+        protected virtual void TlsAuthenticateAsClient(SslStream sslStream, string host)
         {
+            sslStream.AuthenticateAsClient(host, null, SslProtocols.Tls12, true);
+        }
+
+        /// <summary>
+        /// Override this if you need more control over how the stream used for the websocket is created. It does not event need to be a TCP stream
+        /// </summary>
+        /// <param name="loggingGuid">For logging purposes only</param>
+        /// <param name="isSecure">Make a secure connection</param>
+        /// <param name="noDelay">Set to true to send a message immediately with the least amount of latency (typical usage for chat)</param>
+        /// <param name="host">The destination host (can be an IP address)</param>
+        /// <param name="port">The destination port</param>
+        /// <param name="cancellationToken">Used to cancel the request</param>
+        /// <returns>A connected and open stream</returns>
+        protected virtual async Task<Stream> GetStream(Guid loggingGuid, bool isSecure, bool noDelay, string host, int port, CancellationToken cancellationToken)
+        {
+            var tcpClient = new TcpClient();
+            tcpClient.NoDelay = noDelay;
+            IPAddress ipAddress;
+            if (IPAddress.TryParse(host, out ipAddress))
+            {
+                Events.Log.ClientConnectingToIpAddress(loggingGuid, ipAddress.ToString(), port);
+                await tcpClient.ConnectAsync(ipAddress, port);
+            }
+            else
+            {
+                Events.Log.ClientConnectingToHost(loggingGuid, host, port);
+                await tcpClient.ConnectAsync(host, port);
+            }
+
+            cancellationToken.ThrowIfCancellationRequested();
             Stream stream = tcpClient.GetStream();
 
             if (isSecure)
             {
                 SslStream sslStream = new SslStream(stream, false, new RemoteCertificateValidationCallback(ValidateServerCertificate), null);
-                Events.Log.AttemtingToSecureSslConnection(guid);
+                Events.Log.AttemtingToSecureSslConnection(loggingGuid);
 
                 // This will throw an AuthenticationException if the certificate is not valid
-                sslStream.AuthenticateAsClient(host);
-                Events.Log.ConnectionSecured(guid);
+                TlsAuthenticateAsClient(sslStream, host);
+                Events.Log.ConnectionSecured(loggingGuid);
                 return sslStream;
             }
             else
             {
-                Events.Log.ConnectionNotSecure(guid);
+                Events.Log.ConnectionNotSecure(loggingGuid);
                 return stream;
             }
         }
