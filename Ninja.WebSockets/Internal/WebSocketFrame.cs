@@ -26,6 +26,5 @@ namespace Ninja.WebSockets.Internal
             CloseStatus = closeStatus;
             CloseStatusDescription = closeStatusDescription;
         }
-
     }
 }

@@ -170,7 +170,12 @@ namespace Ninja.WebSockets
         private void ThrowIfInvalidResponseCode(string responseHeader)
         {
             string responseCode = HttpHelper.ReadHttpResponseCode(responseHeader);
-            if (!string.Equals(responseCode, "101 Switching Protocols", StringComparison.InvariantCultureIgnoreCase))
+            if (responseCode == null)
+            {
+                throw new InvalidHttpResponseCodeException(null, null, responseHeader);
+            }
+
+            if (!responseCode.StartsWith("101 ", StringComparison.InvariantCultureIgnoreCase))
             {
                 string[] lines = responseHeader.Split(new string[] { "\r\n" }, StringSplitOptions.None);
 

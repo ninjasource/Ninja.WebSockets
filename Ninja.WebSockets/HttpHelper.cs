@@ -20,17 +20,16 @@
 // THE SOFTWARE.
 // ---------------------------------------------------------------------
 
+using Ninja.WebSockets.Exceptions;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Runtime.CompilerServices;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using Ninja.WebSockets.Exceptions;
-using System.Linq;
 
 namespace Ninja.WebSockets
 {

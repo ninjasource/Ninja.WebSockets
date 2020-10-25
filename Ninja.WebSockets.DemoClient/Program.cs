@@ -1,6 +1,5 @@
 ﻿using Ninja.WebSockets.DemoClient.Complex;
 using System;
-using System.Diagnostics;
 using System.Threading.Tasks;
 using WebSockets.DemoClient.Complex;
 using WebSockets.DemoClient.Simple;
@@ -19,7 +18,7 @@ namespace WebSockets.DemoClient
             {
                 // TODO: allow buffer pool to grow its buffers
                 // ws://localhost:27416/echo 5 1000 5000 40000
-                RunComplexTest(args).Wait();
+                RunComplexTest(args);
             }
             else
             {
@@ -27,6 +26,9 @@ namespace WebSockets.DemoClient
                 Console.WriteLine($"Complex Test: uri numThreads numItemsPerThread minNumBytesPerMessage maxNumBytesPerMessage");
                 Console.WriteLine("e.g: ws://localhost:27416/chat/echo 5 100 4 4");
             }
+
+            Console.WriteLine("Press any key to quit");
+            Console.ReadKey();
         }
 
         private static async Task RunLoadTest()
@@ -35,7 +37,7 @@ namespace WebSockets.DemoClient
             await client.Run();
         }
 
-        private static async Task RunComplexTest(string[] args)
+        private static void RunComplexTest(string[] args)
         {
             Uri uri = new Uri(args[0]);
             Int32.TryParse(args[1], out int numThreads);

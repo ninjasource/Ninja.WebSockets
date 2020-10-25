@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -20,6 +21,8 @@ namespace Ninja.WebSockets.UnitTests
             private Task _connectionPointTask;
             public Uri Address { get; private set; }
             public readonly List<byte[]> ReceivedMessages = new List<byte[]>();
+            private WebSocket _webSocket;
+            public WebSocketState State => _webSocket?.State ?? WebSocketState.None;
 
             public Server()
             {
@@ -80,6 +83,7 @@ namespace Ninja.WebSockets.UnitTests
                     {
                         HttpListenerWebSocketContext webSocketContext = await context.AcceptWebSocketAsync(null);
                         var webSocket = webSocketContext.WebSocket;
+                        _webSocket = webSocket;
                         byte[] receiveBuffer = new byte[4096];
 
                         MemoryStream stream = new MemoryStream();
@@ -102,7 +106,7 @@ namespace Ninja.WebSockets.UnitTests
 
                                         break;
                                     }
-
+                                
                                 case WebSocketMessageType.Binary:
                                     {
                                         stream.Write(arraySegment.Array, arraySegment.Offset, received.Count);
@@ -180,10 +184,20 @@ namespace Ninja.WebSockets.UnitTests
                 // Close
                 await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Close", CancellationToken.None);
 
+                // Wait for the server to receive our close message
+                var stopwatch = Stopwatch.StartNew();
+                while (server.State == WebSocketState.Open)
+                {
+                    await Task.Delay(5);
+                    if (stopwatch.Elapsed.TotalSeconds > 10)
+                    {
+                        throw new TimeoutException("Timeout expired after waiting for close handshake to complete");
+                    }
+                }
+                
                 Assert.Single(server.ReceivedMessages);
                 Assert.Equal(message, server.ReceivedMessages[0]);
             }
         }
-
     }
 }
