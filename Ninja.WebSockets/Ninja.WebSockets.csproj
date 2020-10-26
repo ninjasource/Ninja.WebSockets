@@ -6,9 +6,9 @@
     <Authors>David Haig</Authors>
     <Company>David Haig</Company>
     <Copyright>David Haig</Copyright>
-    <PackageIconUrl>https://raw.githubusercontent.com/ninjasource/Ninja.WebSockets/master/icon.png</PackageIconUrl>
+    <PackageIconUrl></PackageIconUrl>
     <RepositoryUrl>https://github.com/ninjasource/Ninja.WebSockets</RepositoryUrl>
-    <PackageLicenseUrl>https://raw.githubusercontent.com/ninjasource/Ninja.WebSockets/master/LICENCE.md</PackageLicenseUrl>
+    <PackageLicenseUrl></PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/ninjasource/Ninja.WebSockets</PackageProjectUrl>
     <Description>A concrete implementation of the .Net Standard 2.0 System.Net.WebSockets.WebSocket abstract class
 
@@ -17,13 +17,15 @@ Works on any version of Windows (including Windows 7) as well as Linux as it doe
 
 A WebSocket library that allows you to make WebSocket connections as a client or to respond to WebSocket requests as a server. You can safely pass around a general purpose WebSocket instance throughout your codebase without tying yourself strongly to this library. This is the same WebSocket abstract class used by .net core 2.0 and it allows for asynchronous Websocket communication for improved performance and scalability.</Description>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
-    <PackageReleaseNotes>Fixed client websocket issue where some websocket servers return HTTP code "101 " followed by some non standard string.</PackageReleaseNotes>
+    <PackageReleaseNotes>Fixed client websocket issue where some websocket servers return HTTP code "101 " followed by some non-standard string.</PackageReleaseNotes>
     <PackageTags>WebSockets, Web Sockets, WebSocket, Web Socket, .netstandard,</PackageTags>
     <AssemblyVersion>1.0.1.7</AssemblyVersion>
     <FileVersion>1.0.1.7</FileVersion>
     <SignAssembly>false</SignAssembly>
     <AssemblyOriginatorKeyFile>Ninja.WebSockets.pfx</AssemblyOriginatorKeyFile>
     <Configurations>Debug;Release;ReleaseSigned</Configurations>
+    <PackageLicenseFile>LICENCE.md</PackageLicenseFile>
+    <PackageIcon>icon.png</PackageIcon>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netstandard2.0|AnyCPU'">
@@ -34,5 +36,16 @@ A WebSocket library that allows you to make WebSocket connections as a client or
     <DefineConstants>TRACE;RELEASESIGNED</DefineConstants>
     <Optimize>true</Optimize>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\icon.png">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
+    <None Include="..\LICENCE.md">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
+  </ItemGroup>
 
 </Project>
