@@ -53,6 +53,7 @@ namespace Ninja.WebSockets.Internal
         private readonly IPingPongManager _pingPongManager;
         private bool _isContinuationFrame;
         private WebSocketMessageType _continuationFrameMessageType = WebSocketMessageType.Binary;
+        private WebSocketReadCursor _readCursor;
         private readonly bool _usePerMessageDeflate = false;
         private bool _tryGetBufferFailureLogged = false;
         const int MAX_PING_PONG_PAYLOAD_LEN = 125;
@@ -71,6 +72,7 @@ namespace Ninja.WebSockets.Internal
             _subProtocol = subProtocol;
             _internalReadCts = new CancellationTokenSource();
             _state = WebSocketState.Open;
+            _readCursor = new WebSocketReadCursor(null, 0, 0);
 
             if (secWebSocketExtensions?.IndexOf("permessage-deflate") >= 0)
             {
@@ -125,11 +127,24 @@ namespace Ninja.WebSockets.Internal
                     // allow this operation to be cancelled from iniside OR outside this instance
                     using (CancellationTokenSource linkedCts = CancellationTokenSource.CreateLinkedTokenSource(_internalReadCts.Token, cancellationToken))
                     {
-                        WebSocketFrame frame = null;
+                        WebSocketFrame frame;
+
                         try
                         {
-                            frame = await WebSocketFrameReader.ReadAsync(_stream, buffer, linkedCts.Token);
-                            Events.Log.ReceivedFrame(_guid, frame.OpCode, frame.IsFinBitSet, frame.Count);
+                            if (_readCursor.NumBytesLeftToRead > 0)
+                            {
+                                // If the buffer used to read the frame was too small to fit the whole frame then we need to "remember" this frame
+                                // and return what we have. Subsequent calls to the read function will simply continue reading off the stream without 
+                                // decoding the first few bytes as a websocket header.
+                                _readCursor = await WebSocketFrameReader.ReadFromCursorAsync(_stream, buffer, _readCursor, linkedCts.Token);
+                                frame = _readCursor.WebSocketFrame;
+                            }
+                            else
+                            {
+                                _readCursor = await WebSocketFrameReader.ReadAsync(_stream, buffer, linkedCts.Token);
+                                frame = _readCursor.WebSocketFrame;
+                                Events.Log.ReceivedFrame(_guid, frame.OpCode, frame.IsFinBitSet, frame.Count);
+                            }
                         }
                         catch (InternalBufferOverflowException ex)
                         {
@@ -157,16 +172,17 @@ namespace Ninja.WebSockets.Internal
                             throw;
                         }
 
+                        var endOfMessage = frame.IsFinBitSet && _readCursor.NumBytesLeftToRead == 0;
                         switch (frame.OpCode)
                         {
                             case WebSocketOpCode.ConnectionClose:
                                 return await RespondToCloseFrame(frame, buffer, linkedCts.Token);
                             case WebSocketOpCode.Ping:
-                                ArraySegment<byte> pingPayload = new ArraySegment<byte>(buffer.Array, buffer.Offset, frame.Count);
+                                ArraySegment<byte> pingPayload = new ArraySegment<byte>(buffer.Array, buffer.Offset, _readCursor.NumBytesRead);
                                 await SendPongAsync(pingPayload, linkedCts.Token);
                                 break;
                             case WebSocketOpCode.Pong:
-                                ArraySegment<byte> pongBuffer = new ArraySegment<byte>(buffer.Array, frame.Count, buffer.Offset);
+                                ArraySegment<byte> pongBuffer = new ArraySegment<byte>(buffer.Array, _readCursor.NumBytesRead, buffer.Offset);
                                 Pong?.Invoke(this, new PongEventArgs(pongBuffer));
                                 break;
                             case WebSocketOpCode.TextFrame:
@@ -175,16 +191,16 @@ namespace Ninja.WebSockets.Internal
                                     // continuation frames will follow, record the message type Text
                                     _continuationFrameMessageType = WebSocketMessageType.Text;
                                 }
-                                return new WebSocketReceiveResult(frame.Count, WebSocketMessageType.Text, frame.IsFinBitSet);
+                                return new WebSocketReceiveResult(_readCursor.NumBytesRead, WebSocketMessageType.Text, endOfMessage);
                             case WebSocketOpCode.BinaryFrame:
                                 if (!frame.IsFinBitSet)
                                 {
                                     // continuation frames will follow, record the message type Binary
                                     _continuationFrameMessageType = WebSocketMessageType.Binary;
                                 }
-                                return new WebSocketReceiveResult(frame.Count, WebSocketMessageType.Binary, frame.IsFinBitSet);
+                                return new WebSocketReceiveResult(_readCursor.NumBytesRead, WebSocketMessageType.Binary, endOfMessage);
                             case WebSocketOpCode.ContinuationFrame:
-                                return new WebSocketReceiveResult(frame.Count, _continuationFrameMessageType, frame.IsFinBitSet);
+                                return new WebSocketReceiveResult(_readCursor.NumBytesRead, _continuationFrameMessageType, endOfMessage);
                             default:
                                 Exception ex = new NotSupportedException($"Unknown WebSocket opcode {frame.OpCode}");
                                 await CloseOutputAutoTimeoutAsync(WebSocketCloseStatus.ProtocolError, ex.Message, ex);

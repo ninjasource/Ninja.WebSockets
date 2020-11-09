@@ -52,7 +52,7 @@ namespace Ninja.WebSockets.UnitTests
             CancellationTokenSource tokenSource = new CancellationTokenSource();
 
             var clientReceiveTask = Task.Run<string[]>(() => ReceiveClient(webSocketClient, tokenSource.Token));
-            var serverReceiveTask = Task.Run(() => ReceiveServer(webSocketServer, tokenSource.Token));
+            var serverReceiveTask = Task.Run(() => ReceiveServer(webSocketServer, 256, tokenSource.Token));
 
             ArraySegment<byte> message1 = GetBuffer("Hi");
             ArraySegment<byte> message2 = GetBuffer("There");
@@ -67,7 +67,46 @@ namespace Ninja.WebSockets.UnitTests
                 Console.WriteLine(reply);
             }
         }
-    
+
+        [Fact]
+        public async Task ReceiveBufferTooSmallToFitWebsocketFrameTest()
+        {
+            Func<MemoryStream> memoryStreamFactory = () => new MemoryStream();
+            string pipeName = Guid.NewGuid().ToString();
+            using (var clientPipe = new NamedPipeClientStream(".", pipeName, PipeDirection.InOut, PipeOptions.Asynchronous))
+            using (var serverPipe = new NamedPipeServerStream(pipeName, PipeDirection.InOut, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous))
+            {
+                Task clientConnectTask = clientPipe.ConnectAsync();
+                Task serverConnectTask = serverPipe.WaitForConnectionAsync();
+                Task.WaitAll(clientConnectTask, serverConnectTask);
+
+                var webSocketClient = new WebSocketImplementation(Guid.NewGuid(), memoryStreamFactory, clientPipe, TimeSpan.Zero, null, false, true, null);
+                var webSocketServer = new WebSocketImplementation(Guid.NewGuid(), memoryStreamFactory, serverPipe, TimeSpan.Zero, null, false, false, null);
+                CancellationTokenSource tokenSource = new CancellationTokenSource();
+
+                var clientReceiveTask = Task.Run<string[]>(() => ReceiveClient(webSocketClient, tokenSource.Token));
+
+                // here we use a server with a buffer size of 10 which is smaller than the websocket frame
+                var serverReceiveTask = Task.Run(() => ReceiveServer(webSocketServer, 10, tokenSource.Token));
+                ArraySegment<byte> message1 = GetBuffer("This is a test message");
+
+                await webSocketClient.SendAsync(message1, WebSocketMessageType.Binary, true, tokenSource.Token);
+                await webSocketClient.CloseAsync(WebSocketCloseStatus.NormalClosure, null, tokenSource.Token);
+
+                await serverReceiveTask;
+                string[] replies = await clientReceiveTask;
+                foreach (string reply in replies)
+                {
+                    Console.WriteLine(reply);
+                }
+
+                Assert.Equal(3, replies.Length);
+                Assert.Equal("Server: This is ", replies[0]);
+                Assert.Equal("Server: a test m", replies[1]);
+                Assert.Equal("Server: essage", replies[2]);
+            }
+        }
+
         [Fact]
         public async Task SimpleNamedPipes()
         {
@@ -85,7 +124,7 @@ namespace Ninja.WebSockets.UnitTests
                 CancellationTokenSource tokenSource = new CancellationTokenSource();
 
                 var clientReceiveTask = Task.Run<string[]>(() => ReceiveClient(webSocketClient, tokenSource.Token));
-                var serverReceiveTask = Task.Run(() => ReceiveServer(webSocketServer, tokenSource.Token));
+                var serverReceiveTask = Task.Run(() => ReceiveServer(webSocketServer, 256, tokenSource.Token));
 
                 ArraySegment<byte> message1 = GetBuffer("Hi");
                 ArraySegment<byte> message2 = GetBuffer("There");
@@ -131,9 +170,9 @@ namespace Ninja.WebSockets.UnitTests
             return values.ToArray();
         }
 
-        public async Task ReceiveServer(WebSocket webSocket, CancellationToken cancellationToken)
+        public async Task ReceiveServer(WebSocket webSocket, int bufferSize, CancellationToken cancellationToken)
         {
-            byte[] array = new byte[256];
+            byte[] array = new byte[bufferSize];
             var buffer = new ArraySegment<byte>(array);
 
             while (true)

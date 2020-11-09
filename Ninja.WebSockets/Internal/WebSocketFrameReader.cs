@@ -35,6 +35,43 @@ namespace Ninja.WebSockets.Internal
     /// </summary>
     internal static class WebSocketFrameReader
     {
+        private static int CalculateNumBytesToRead(int numBytesLetfToRead, int bufferSize)
+        {
+            if (bufferSize < numBytesLetfToRead)
+            {
+                // the count needs to be a multiple of the mask key
+                return bufferSize - bufferSize % 4;
+            }
+            else
+            {
+                return numBytesLetfToRead;
+            }
+        }
+
+        /// <summary>
+        /// The last read could not be completed because the read buffer was too small. 
+        /// We need to continue reading bytes off the stream.
+        /// Not to be confused with a continuation frame
+        /// </summary>
+        /// <param name="fromStream">The stream to read from</param>
+        /// <param name="intoBuffer">The buffer to read into</param>
+        /// <param name="readCursor">The previous partial websocket frame read plus cursor information</param>
+        /// <param name="cancellationToken">the cancellation token</param>
+        /// <returns>A websocket frame</returns>
+        public static async Task<WebSocketReadCursor> ReadFromCursorAsync(Stream fromStream, ArraySegment<byte> intoBuffer, WebSocketReadCursor readCursor, CancellationToken cancellationToken)
+        {
+            var remainingFrame = readCursor.WebSocketFrame;
+            var minCount = CalculateNumBytesToRead(readCursor.NumBytesLeftToRead, intoBuffer.Count);
+            await BinaryReaderWriter.ReadExactly(minCount, fromStream, intoBuffer, cancellationToken);
+            if (remainingFrame.MaskKey.Count > 0)
+            {
+                ArraySegment<byte> payloadToMask = new ArraySegment<byte>(intoBuffer.Array, intoBuffer.Offset, minCount);
+                WebSocketFrameCommon.ToggleMask(remainingFrame.MaskKey, payloadToMask);
+            }
+
+            return new WebSocketReadCursor(remainingFrame, minCount, readCursor.NumBytesLeftToRead - minCount);
+        }
+
         /// <summary>
         /// Read a WebSocket frame from the stream
         /// </summary>
@@ -42,7 +79,7 @@ namespace Ninja.WebSockets.Internal
         /// <param name="intoBuffer">The buffer to read into</param>
         /// <param name="cancellationToken">the cancellation token</param>
         /// <returns>A websocket frame</returns>
-        public static async Task<WebSocketFrame> ReadAsync(Stream fromStream, ArraySegment<byte> intoBuffer, CancellationToken cancellationToken)
+        public static async Task<WebSocketReadCursor> ReadAsync(Stream fromStream, ArraySegment<byte> intoBuffer, CancellationToken cancellationToken)
         {
             // allocate a small buffer to read small chunks of data from the stream
             var smallBuffer = new ArraySegment<byte>(new byte[8]);
@@ -62,21 +99,23 @@ namespace Ninja.WebSockets.Internal
             bool isMaskBitSet = (byte2 & maskFlag) == maskFlag;
             uint len = await ReadLength(byte2, smallBuffer, fromStream, cancellationToken);
             int count = (int)len;
+            var minCount = CalculateNumBytesToRead(count, intoBuffer.Count);
+            ArraySegment<byte> maskKey = new ArraySegment<byte>();
 
             try
             {
                 // use the masking key to decode the data if needed
                 if (isMaskBitSet)
                 {
-                    ArraySegment<byte> maskKey = new ArraySegment<byte>(smallBuffer.Array, 0, WebSocketFrameCommon.MaskKeyLength);
+                    maskKey = new ArraySegment<byte>(smallBuffer.Array, 0, WebSocketFrameCommon.MaskKeyLength);
                     await BinaryReaderWriter.ReadExactly(maskKey.Count, fromStream, maskKey, cancellationToken);
-                    await BinaryReaderWriter.ReadExactly(count, fromStream, intoBuffer, cancellationToken);
-                    ArraySegment<byte> payloadToMask = new ArraySegment<byte>(intoBuffer.Array, intoBuffer.Offset, count);
+                    await BinaryReaderWriter.ReadExactly(minCount, fromStream, intoBuffer, cancellationToken);
+                    ArraySegment<byte> payloadToMask = new ArraySegment<byte>(intoBuffer.Array, intoBuffer.Offset, minCount);
                     WebSocketFrameCommon.ToggleMask(maskKey, payloadToMask);
                 }
                 else
                 {
-                    await BinaryReaderWriter.ReadExactly(count, fromStream, intoBuffer, cancellationToken);
+                    await BinaryReaderWriter.ReadExactly(minCount, fromStream, intoBuffer, cancellationToken);
                 }
             } 
             catch (InternalBufferOverflowException e)
@@ -84,21 +123,24 @@ namespace Ninja.WebSockets.Internal
                 throw new InternalBufferOverflowException($"Supplied buffer too small to read {0} bytes from {Enum.GetName(typeof(WebSocketOpCode), opCode)} frame", e);
             }
 
+            WebSocketFrame frame;
             if (opCode == WebSocketOpCode.ConnectionClose)
             {
-                return DecodeCloseFrame(isFinBitSet, opCode, count, intoBuffer);
+                frame = DecodeCloseFrame(isFinBitSet, opCode, count, intoBuffer, maskKey);
             }
             else
             {
                 // note that by this point the payload will be populated
-                return new WebSocketFrame(isFinBitSet, opCode, count);
+                frame = new WebSocketFrame(isFinBitSet, opCode, count, maskKey);
             }
+
+            return new WebSocketReadCursor(frame, minCount, count - minCount);
         }
 
         /// <summary>
         /// Extracts close status and close description information from the web socket frame
         /// </summary>
-        private static WebSocketFrame DecodeCloseFrame(bool isFinBitSet, WebSocketOpCode opCode, int count, ArraySegment<byte> buffer)
+        private static WebSocketFrame DecodeCloseFrame(bool isFinBitSet, WebSocketOpCode opCode, int count, ArraySegment<byte> buffer, ArraySegment<byte> maskKey)
         {
             WebSocketCloseStatus closeStatus;
             string closeStatusDescription;
@@ -134,7 +176,7 @@ namespace Ninja.WebSockets.Internal
                 closeStatusDescription = null;
             }
 
-            return new WebSocketFrame(isFinBitSet, opCode, count, closeStatus, closeStatusDescription);
+            return new WebSocketFrame(isFinBitSet, opCode, count, closeStatus, closeStatusDescription, maskKey);
         }
 
         /// <summary>
