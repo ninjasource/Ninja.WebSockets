@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;net45</TargetFrameworks>
-    <Version>1.1.7</Version>
+    <Version>1.1.8</Version>
     <Authors>David Haig</Authors>
     <Company>David Haig</Company>
     <Copyright>David Haig</Copyright>
@@ -17,10 +17,10 @@ Works on any version of Windows (including Windows 7) as well as Linux as it doe
 
 A WebSocket library that allows you to make WebSocket connections as a client or to respond to WebSocket requests as a server. You can safely pass around a general purpose WebSocket instance throughout your codebase without tying yourself strongly to this library. This is the same WebSocket abstract class used by .net core 2.0 and it allows for asynchronous Websocket communication for improved performance and scalability.</Description>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
-    <PackageReleaseNotes>Fixed client websocket issue where some websocket servers return HTTP code "101 " followed by some non-standard string.</PackageReleaseNotes>
+    <PackageReleaseNotes>Receive buffer can now be smaller than a websocket frame</PackageReleaseNotes>
     <PackageTags>WebSockets, Web Sockets, WebSocket, Web Socket, .netstandard,</PackageTags>
-    <AssemblyVersion>1.0.1.7</AssemblyVersion>
-    <FileVersion>1.0.1.7</FileVersion>
+    <AssemblyVersion>1.0.1.8</AssemblyVersion>
+    <FileVersion>1.0.1.8</FileVersion>
     <SignAssembly>false</SignAssembly>
     <AssemblyOriginatorKeyFile>Ninja.WebSockets.pfx</AssemblyOriginatorKeyFile>
     <Configurations>Debug;Release;ReleaseSigned</Configurations>
